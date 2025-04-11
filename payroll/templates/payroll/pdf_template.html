@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .company-name { font-size: 24px; font-weight: bold; }
+        .payroll-info { margin: 20px 0; }
+        .employee-info { margin: 20px 0; }
+        .salary-details { margin: 20px 0; }
+        .total { font-weight: bold; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-name">{{ company_name }}</div>
+        <div>Payroll Statement</div>
+        <div>{{ payroll.pay_period|date:"F Y" }}</div>
+    </div>
+
+    <div class="employee-info">
+        <h3>Employee Information</h3>
+        <table>
+            <tr>
+                <td>Name:</td>
+                <td>{{ employee.first_name }} {{ employee.last_name }}</td>
+                <td>Department:</td>
+                <td>{{ department }}</td>
+            </tr>
+            <tr>
+                <td>Employee ID:</td>
+                <td>{{ employee.id }}</td>
+                <td>Pay Period:</td>
+                <td>{{ payroll.pay_period|date:"F j, Y" }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="salary-details">
+        <h3>Salary Details</h3>
+        <table>
+            <tr>
+                <th>Description</th>
+                <th>Amount</th>
+            </tr>
+            <tr>
+                <td>Gross Salary</td>
+                <td>${{ payroll.gross_salary|floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <td>Allowances</td>
+                <td>${{ payroll.total_allowances|floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <td>Deductions</td>
+                <td>${{ payroll.total_deductions|floatformat:2 }}</td>
+            </tr>
+            <tr class="total">
+                <td>Net Salary</td>
+                <td>${{ payroll.net_salary|floatformat:2 }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer">
+        <p>Generated on: {{ generated_date }}</p>
+    </div>
+</body>
+</html>

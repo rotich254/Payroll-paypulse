@@ -1,0 +1,139 @@
+{% extends 'base.html'%}
+{% load static %}
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="card-title mb-0">Payroll Detail</h4>
+                        <div class="d-flex gap-2">
+                            {% if payroll.payment_status == 'pending' %}
+                            <button class="btn btn-success" 
+                                    onclick="markAsPaid({{ payroll.id }})"
+                                    {% if payroll.pay_period|date:'Y-m-d' > today|date:'Y-m-d' %}
+                                    disabled
+                                    title="Cannot mark as paid before the pay date"
+                                    {% endif %}>
+                                <i class="bi bi-check-circle me-2"></i>Mark as Paid
+                            </button>
+                            {% endif %}
+                            <button class="btn btn-primary" onclick="generatePDF({{ payroll.id }})">
+                                <i class="bi bi-file-pdf me-2"></i>Download PDF
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Employee Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5 class="mb-3">Employee Information</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="30%">Name:</th>
+                                    <td>{{ employee.first_name }} {{ employee.last_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Department:</th>
+                                    <td>{{ department }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Employee ID:</th>
+                                    <td>{{ employee.id }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="mb-3">Payroll Information</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="30%">Pay Period:</th>
+                                    <td>{{ payroll.pay_period|date:"F j, Y" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Status:</th>
+                                    <td>
+                                        <span class="badge {% if payroll.payment_status == 'paid' %}bg-success{% else %}bg-warning{% endif %}">
+                                            {{ status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Payment Date:</th>
+                                    <td>{{ payroll.payment_date|date:"F j, Y"|default:"Pending" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Salary Breakdown -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h5 class="mb-3">Salary Breakdown</h5>
+                            <table class="table">
+                                <tbody>
+                                    <tr>
+                                        <th width="30%">Gross Salary:</th>
+                                        <td>KSh {{ payroll.gross_salary|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Allowances:</th>
+                                        <td>KSh {{ payroll.total_allowances|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Deductions:</th>
+                                        <td>KSh {{ payroll.total_deductions|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr class="table-active fw-bold">
+                                        <th>Net Salary:</th>
+                                        <td>KSh {{ payroll.net_salary|floatformat:2 }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function generatePDF(payrollId) {
+    window.location.href = `/payroll/${payrollId}/pdf/`;
+}
+
+function markAsPaid(payrollId) {
+    if (confirm('Are you sure you want to mark this payroll as paid?')) {
+        fetch(`{% url 'mark_payroll_paid' 0 %}`.replace('0', payrollId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the payment status');
+        });
+    }
+}
+
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+});
+</script>
+{% endblock %}
