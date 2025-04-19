@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div id="page-content-wrapper">
+    <nav class="navbar navbar-expand-lg navbar-light bg-transparent py-4 px-4">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-list fs-2 me-3" id="menu-toggle"></i>
+            <h2 class="fs-2 m-0">{{ title }}</h2>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-4">
+        <div class="row my-5">
+            <div class="col-12">
+                <div class="card border-0 shadow">
+                    <div class="card-header">
+                        <h5 class="mb-0">{{ title }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Period</th>
+                                        <th>Date</th>
+                                        <th>Department</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for period in upcoming_periods %}
+                                    <tr>
+                                        <td>{{ period.period }}</td>
+                                        <td>{{ period.date }}</td>
+                                        <td>{{ period.department }}</td>
+                                        <td><span class="badge bg-secondary">Scheduled</span></td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4">
+                                            <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
+                                            <p class="text-muted mb-0">No upcoming payroll schedules found.</p>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        {% if upcoming_periods.has_other_pages %}
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination justify-content-center mt-4">
+                                {% if upcoming_periods.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ upcoming_periods.previous_page_number }}"
+                                        aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link" aria-hidden="true">&laquo;</span>
+                                </li>
+                                {% endif %}
+
+                                {% for i in upcoming_periods.paginator.page_range %}
+                                {% if upcoming_periods.number == i %}
+                                <li class="page-item active" aria-current="page"><span
+                                        class="page-link">{{ i }}</span></li>
+                                {% else %}
+                                <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                                {% endif %}
+                                {% endfor %}
+
+                                {% if upcoming_periods.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ upcoming_periods.next_page_number }}"
+                                        aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link" aria-hidden="true">&raquo;</span>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                        <!-- End Pagination -->
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

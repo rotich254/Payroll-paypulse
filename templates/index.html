@@ -1,4 +1,5 @@
 {% load static %}
+{% load humanize %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -11,15 +12,13 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap">
   <script type="module" crossorigin src="{% static 'css/script.js'%}"></script>
   <link rel="stylesheet" crossorigin href="{% static 'css/style.css' %}">
+  <!-- Add this in the head section, after other CSS links -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div class="d-flex" id="wrapper">
     <!-- Sidebar -->
 {% include 'sidebar.html'%}
-{% block content %}
-{% endblock %}
-    <!-- Sidebar End -->
-
     <!-- Page Content -->
     <div id="page-content-wrapper">
       <nav class="navbar navbar-expand-lg navbar-light bg-transparent py-4 px-4">
@@ -109,46 +108,43 @@
                     <tr>
                       <th scope="col">Employee</th>
                       <th scope="col">Department</th>
-                      <th scope="col">Amount</th>
+                      <th scope="col">Net Amount</th>
                       <th scope="col">Status</th>
+                      <th scope="col">Actions</th> {# Added Actions Header #}
                     </tr>
                   </thead>
                   <tbody>
+                    {% for payroll in recent_payrolls %}
                     <tr>
-                      <td>Sara Johnson</td>
-                      <td>Marketing</td>
-                      <td>$4,500</td>
-                      <td><span class="badge bg-success">Paid</span></td>
+                      <td>{{ payroll.employee.first_name }} {{ payroll.employee.last_name }}</td>
+                      <td>{{ payroll.employee.get_department_display }}</td>
+                      <td>KSh {{ payroll.net_salary|floatformat:2|intcomma }}</td>
+                      <td>
+                        <span class="badge bg-success"> {# Since we only show paid, badge is always success #}
+                          {{ payroll.get_payment_status_display }}
+                        </span>
+                      </td>
+                      <td> {# Added Actions Cell #}
+                        <div class="btn-group btn-group-sm">
+                          <a href="{% url 'payroll_detail' payroll.id %}" class="btn btn-outline-primary" title="View Details">
+                            <i class="bi bi-eye"></i>
+                          </a>
+                          <a href="{% url 'generate_payroll_pdf' payroll.id %}" class="btn btn-outline-success" title="Download PDF">
+                             <i class="bi bi-file-earmark-pdf"></i>
+                          </a>
+                        </div>
+                      </td>
                     </tr>
+                    {% empty %}
                     <tr>
-                      <td>Michael Chen</td>
-                      <td>Development</td>
-                      <td>$5,200</td>
-                      <td><span class="badge bg-success">Paid</span></td>
+                      <td colspan="5" class="text-center text-muted">No recent paid payrolls found.</td> {# Updated colspan #}
                     </tr>
-                    <tr>
-                      <td>Emily Davis</td>
-                      <td>HR</td>
-                      <td>$3,800</td>
-                      <td><span class="badge bg-warning text-dark">Processing</span></td>
-                    </tr>
-                    <tr>
-                      <td>David Wilson</td>
-                      <td>Sales</td>
-                      <td>$4,100</td>
-                      <td><span class="badge bg-success">Paid</span></td>
-                    </tr>
-                    <tr>
-                      <td>Sophie Taylor</td>
-                      <td>Design</td>
-                      <td>$3,900</td>
-                      <td><span class="badge bg-success">Paid</span></td>
-                    </tr>
+                    {% endfor %}
                   </tbody>
                 </table>
               </div>
               <div class="text-end mt-3">
-                <a href="#" class="btn btn-primary btn-sm">View All</a>
+                <a href="{% url 'paid_payroll_list' %}" class="btn btn-primary btn-sm">View All Paid Payrolls</a>
               </div>
             </div>
           </div>
@@ -160,48 +156,41 @@
                 <table class="table bg-white rounded shadow-sm table-hover">
                   <thead>
                     <tr>
-                      <th scope="col">Period</th>
-                      <th scope="col">Date</th>
+                      <th scope="col">Employee</th>
                       <th scope="col">Department</th>
+                      <th scope="col">Net Amount</th>
                       <th scope="col">Status</th>
+                      <th scope="col">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
+                    {% for payroll in upcoming_pending_payrolls %}
                     <tr>
-                      <td>Apr 1-15</td>
-                      <td>Apr 20, 2025</td>
-                      <td>All</td>
-                      <td><span class="badge bg-primary">Upcoming</span></td>
+                      <td>{{ payroll.employee.first_name }} {{ payroll.employee.last_name }}</td>
+                      <td>{{ payroll.employee.get_department_display }}</td>
+                      <td>KSh {{ payroll.net_salary|floatformat:2|intcomma }}</td>
+                      <td><span class="badge bg-warning text-dark">{{ payroll.get_payment_status_display }}</span></td>
+                      <td>
+                        <div class="btn-group btn-group-sm">
+                          <a href="{% url 'payroll_detail' payroll.id %}" class="btn btn-outline-primary" title="View Details">
+                            <i class="bi bi-eye"></i>
+                          </a>
+                          <a href="{% url 'generate_payroll_pdf' payroll.id %}" class="btn btn-outline-success" title="Download PDF">
+                             <i class="bi bi-file-earmark-pdf"></i>
+                          </a>
+                        </div>
+                      </td>
                     </tr>
+                    {% empty %}
                     <tr>
-                      <td>Apr 16-30</td>
-                      <td>May 5, 2025</td>
-                      <td>All</td>
-                      <td><span class="badge bg-secondary">Scheduled</span></td>
+                      <td colspan="5" class="text-center text-muted">No upcoming payrolls found.</td>
                     </tr>
-                    <tr>
-                      <td>May 1-15</td>
-                      <td>May 20, 2025</td>
-                      <td>All</td>
-                      <td><span class="badge bg-secondary">Scheduled</span></td>
-                    </tr>
-                    <tr>
-                      <td>May 16-31</td>
-                      <td>Jun 5, 2025</td>
-                      <td>All</td>
-                      <td><span class="badge bg-secondary">Scheduled</span></td>
-                    </tr>
-                    <tr>
-                      <td>Jun 1-15</td>
-                      <td>Jun 20, 2025</td>
-                      <td>All</td>
-                      <td><span class="badge bg-secondary">Scheduled</span></td>
-                    </tr>
+                    {% endfor %}
                   </tbody>
                 </table>
               </div>
               <div class="text-end mt-3">
-                <a href="#" class="btn btn-primary btn-sm">View Calendar</a>
+                <a href="{% url 'pending_payroll_list' %}" class="btn btn-primary btn-sm">View All</a>
               </div>
             </div>
           </div>
@@ -211,13 +200,17 @@
           <div class="col-md-7">
             <div class="bg-white rounded shadow p-4">
               <h3 class="fs-4 mb-3">Payroll Distribution</h3>
-              <canvas id="payrollChart" width="400" height="250"></canvas>
+              <div class="chart-container" style="position: relative; height:300px;">
+                <canvas id="payrollChart"></canvas>
+              </div>
             </div>
           </div>
           <div class="col-md-5">
             <div class="bg-white rounded shadow p-4">
               <h3 class="fs-4 mb-3">Department Breakdown</h3>
-              <canvas id="deptChart" width="400" height="250"></canvas>
+              <div class="chart-container" style="position: relative; height:300px;">
+                <canvas id="departmentChart"></canvas>
+              </div>
             </div>
           </div>
         </div>
@@ -259,95 +252,124 @@
                       <td>Engineering</td>
                       <td>$85,000</td>
                       <td>
-                        <div class="btn-group" role="group">
-                          <button type="button" class="btn btn-sm btn-outline-primary">View</button>
-                          <button type="button" class="btn btn-sm btn-outline-secondary">Edit</button>
-                          <button type="button" class="btn btn-sm btn-outline-success">Pay</button>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>EMP-002</td>
-                      <td>Jane Doe</td>
-                      <td>Marketing Manager</td>
-                      <td>Marketing</td>
-                      <td>$78,000</td>
-                      <td>
-                        <div class="btn-group" role="group">
-                          <button type="button" class="btn btn-sm btn-outline-primary">View</button>
-                          <button type="button" class="btn btn-sm btn-outline-secondary">Edit</button>
-                          <button type="button" class="btn btn-sm btn-outline-success">Pay</button>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>EMP-003</td>
-                      <td>Robert Johnson</td>
-                      <td>HR Specialist</td>
-                      <td>Human Resources</td>
-                      <td>$65,000</td>
-                      <td>
-                        <div class="btn-group" role="group">
-                          <button type="button" class="btn btn-sm btn-outline-primary">View</button>
-                          <button type="button" class="btn btn-sm btn-outline-secondary">Edit</button>
-                          <button type="button" class="btn btn-sm btn-outline-success">Pay</button>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>EMP-004</td>
-                      <td>Lisa Wang</td>
-                      <td>Financial Analyst</td>
-                      <td>Finance</td>
-                      <td>$72,000</td>
-                      <td>
-                        <div class="btn-group" role="group">
-                          <button type="button" class="btn btn-sm btn-outline-primary">View</button>
-                          <button type="button" class="btn btn-sm btn-outline-secondary">Edit</button>
-                          <button type="button" class="btn btn-sm btn-outline-success">Pay</button>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>EMP-005</td>
-                      <td>Michael Brown</td>
-                      <td>Sales Representative</td>
-                      <td>Sales</td>
-                      <td>$62,000</td>
-                      <td>
-                        <div class="btn-group" role="group">
-                          <button type="button" class="btn btn-sm btn-outline-primary">View</button>
-                          <button type="button" class="btn btn-sm btn-outline-secondary">Edit</button>
-                          <button type="button" class="btn btn-sm btn-outline-success">Pay</button>
+                        <div class="btn-group btn-group-sm" role="group">
+                          <button type="button" class="btn btn-outline-primary" title="View Details">
+                            <i class="bi bi-eye"></i>
+                          </button>
+                          <button type="button" class="btn btn-outline-warning" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                          </button>
+                          <button type="button" class="btn btn-outline-danger" title="Delete">
+                            <i class="bi bi-trash"></i>
+                          </button>
                         </div>
                       </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
-              <nav aria-label="Page navigation">
-                <ul class="pagination justify-content-end mt-3">
-                  <li class="page-item disabled">
-                    <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
-                  </li>
-                  <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                  <li class="page-item"><a class="page-link" href="#">2</a></li>
-                  <li class="page-item"><a class="page-link" href="#">3</a></li>
-                  <li class="page-item">
-                    <a class="page-link" href="#">Next</a>
-                  </li>
-                </ul>
-              </nav>
+            </div>
+          </div>
+        </div>
+
+        <div class="row my-5">
+          <div class="col-md-6">
+            <div class="bg-white rounded shadow p-4">
+              <h3 class="fs-4 mb-3">Department Breakdown</h3>
             </div>
           </div>
         </div>
       </div>
     </div>
-    <!-- Page Content End -->
   </div>
 
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Bootstrap JS -->
+  <!-- Add Chart.js before other scripts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Initialize charts -->
+  <script>
+  // Payroll Distribution Chart
+  const payrollCtx = document.getElementById('payrollChart').getContext('2d');
+  new Chart(payrollCtx, {
+  type: 'bar',
+  data: {
+  labels: {{ departments|safe }},
+  datasets: [{
+  label: 'Total Payroll by Department',
+  data: {{ payroll_by_department|safe }},
+  backgroundColor: [
+  'rgba(75, 192, 192, 0.2)',
+  'rgba(54, 162, 235, 0.2)',
+  'rgba(153, 102, 255, 0.2)',
+  'rgba(255, 159, 64, 0.2)',
+  'rgba(255, 99, 132, 0.2)',
+  ],
+  borderColor: [
+  'rgba(75, 192, 192, 1)',
+  'rgba(54, 162, 235, 1)',
+  'rgba(153, 102, 255, 1)',
+  'rgba(255, 159, 64, 1)',
+  'rgba(255, 99, 132, 1)',
+  ],
+  borderWidth: 1
+  }]
+  },
+  options: {
+  responsive: true,
+  maintainAspectRatio: false,
+  scales: {
+  y: {
+  beginAtZero: true,
+  ticks: {
+  callback: function(value) {
+  return 'KSh ' + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+  }
+  }
+  }
+  }
+  });
+  
+  // Department Breakdown Chart
+  const deptCtx = document.getElementById('departmentChart').getContext('2d');
+  new Chart(deptCtx, {
+  type: 'doughnut',
+  data: {
+  labels: {{ departments|safe }},
+  datasets: [{
+  data: {{ employees_by_department|safe }},
+  backgroundColor: [
+  'rgba(75, 192, 192, 0.2)',
+  'rgba(54, 162, 235, 0.2)',
+  'rgba(153, 102, 255, 0.2)',
+  'rgba(255, 159, 64, 0.2)',
+  'rgba(255, 99, 132, 0.2)',
+  ],
+  borderColor: [
+  'rgba(75, 192, 192, 1)',
+  'rgba(54, 162, 235, 1)',
+  'rgba(153, 102, 255, 1)',
+  'rgba(255, 159, 64, 1)',
+  'rgba(255, 99, 132, 1)',
+  ],
+  borderWidth: 1
+  }]
+  },
+  options: {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+  legend: {
+  position: 'bottom'
+  }
+  }
+  }
+  });
+  </script>
+  
+  <!-- Bootstrap JS and other scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{% static 'js/main.js' %}"></script>
 </body>
 </html>

@@ -9,8 +9,11 @@ urlpatterns = [
     path('remove_employee/<int:employee_id>/', views.remove_employee, name='remove_employee'),
     path('employee/<int:employee_id>/update-status/', views.update_employee_status, name='update_employee_status'),
     path('payroll/', views.payroll, name='payroll'),
+    path('generate-payroll/', views.generate_payroll, name='generate_payroll'), # Added URL for generating payroll
     path('payroll/<int:payroll_id>/pdf/', views.generate_payroll_pdf, name='generate_payroll_pdf'),
     path('payroll/<int:payroll_id>/', views.payroll_detail, name='payroll_detail'),
-    path('payroll/generate/', views.generate_payroll, name='generate_payroll'),
-    path('payroll/<int:payroll_id>/mark-paid/', views.mark_payroll_paid, name='mark_payroll_paid'),
+    # Removed duplicate pdf url
+    path('payroll/<int:payroll_id>/mark_paid/', views.mark_payroll_paid, name='mark_payroll_paid'),
+    path('paid-payrolls/', views.paid_payroll_list, name='paid_payroll_list'), # New URL for paid payrolls
+    path('pending-payrolls/', views.pending_payroll_list, name='pending_payroll_list'), # Renamed URL and view
 ]

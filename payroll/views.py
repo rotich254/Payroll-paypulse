@@ -9,13 +9,15 @@ from django.views.decorators.csrf import csrf_protect
 from django.http import JsonResponse
 from django.db.models import Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation  # Add InvalidOperation
 from django.utils import timezone
 from datetime import datetime
 from django.template.loader import render_to_string
 from django.http import HttpResponse
 from django.urls import reverse
 import tempfile
+from django.db.models import Sum, Count
+import json
 
 # Replace WeasyPrint imports with ReportLab
 from reportlab.pdfgen import canvas
@@ -32,13 +34,64 @@ def index(request):
     active_employees = Employee.objects.filter(is_active='active').count()
     on_leave_employees = Employee.objects.filter(is_active='on_leave').count()
     probation_employees = Employee.objects.filter(is_active='probation').count()
-    
+
+    # Get the 5 most recently PAID payroll records, ordered by payment date
+    recent_payrolls = Payroll.objects.filter(payment_status='paid').select_related('employee').order_by('-payment_date')[:5]
+
+    # Get the 6 nearest upcoming PENDING payrolls
+    today = timezone.now().date()
+    upcoming_pending_payrolls = Payroll.objects.filter(
+        payment_status='pending',
+        pay_period__gte=today  # Filter for pay periods today or in the future
+    ).exclude(payment_status='paid').select_related('employee').order_by('pay_period')[:5]
+
     context = {
         'total_employees': total_employees,
+        'upcoming_pending_payrolls': upcoming_pending_payrolls,  # Renamed context variable
+        'recent_payrolls': recent_payrolls,  # Add recent payrolls to context
         'active_employees': active_employees,
         'on_leave_employees': on_leave_employees,
         'probation_employees': probation_employees,
+        'upcoming_periods': get_payroll_periods(),
     }
+
+    # Departmental Payroll Distribution
+    department_data = {}
+    for employee in Employee.objects.filter(is_active='active'):
+        department = employee.get_department_display()
+        payroll_records = Payroll.objects.filter(employee=employee, payment_status='paid')
+        total_salary = sum(record.net_salary for record in payroll_records)
+        if department in department_data:
+            department_data[department] += total_salary
+        else:
+            department_data[department] = total_salary
+
+    context['department_data'] = department_data
+    # Get department data for charts
+    department_data = Employee.objects.values('department').annotate(
+    total_payroll=Sum('salary'),
+    employee_count=Count('id')
+    )
+    
+    # Prepare data for charts
+    departments = [dict(Employee.DEPARTMENT_CHOICES)[dept['department']] for dept in department_data]
+    payroll_by_department = [float(dept['total_payroll'] or 0) for dept in department_data]
+    employees_by_department = [dept['employee_count'] for dept in department_data]
+    
+    context.update({
+    'total_employees': total_employees,
+    'active_employees': active_employees,
+    'on_leave_employees': on_leave_employees,
+    'probation_employees': probation_employees,
+    'upcoming_pending_payrolls': upcoming_pending_payrolls,
+    'recent_payrolls': recent_payrolls,
+    'upcoming_periods': get_payroll_periods(),
+    # Add chart data to context
+    'departments': json.dumps(departments),
+    'payroll_by_department': json.dumps(payroll_by_department),
+    'employees_by_department': json.dumps(employees_by_department),
+    })
+
     return render(request, 'index.html', context)
 
 def employee_list(request):
@@ -184,28 +237,61 @@ def update_employee_status(request, employee_id):
         
 def payroll(request):
     show_all = request.GET.get('show_all', False)
+    search_query = request.GET.get('search', '').strip()
     active_employees = Employee.objects.filter(is_active='active').order_by('first_name', 'last_name')
     
-    # Calculate summary statistics with comma formatting
+    # Get base payroll queryset, ordered by creation date (newest first)
+    payroll_history = Payroll.objects.select_related('employee').order_by('-created_at')
+    
+    # Apply search filter if query exists
+    if search_query:
+        # First try exact reference ID match
+        reference_match = payroll_history.filter(
+            Q(reference_id__iexact=search_query) |  # Exact match (case-insensitive)
+            Q(reference_id__icontains=search_query)  # Partial match (case-insensitive)
+        )
+        
+        if reference_match.exists():
+            payroll_history = reference_match
+        else:
+            # If no reference ID match, try name search
+            name_parts = search_query.split()
+            if len(name_parts) > 1:
+                # Multiple words - search first and last name
+                payroll_history = payroll_history.filter(
+                    Q(employee__first_name__icontains=name_parts[0]) & 
+                    Q(employee__last_name__icontains=name_parts[1]) |
+                    Q(employee__first_name__icontains=name_parts[1]) & 
+                    Q(employee__last_name__icontains=name_parts[0])
+                )
+            else:
+                # Single word - search in first name or last name
+                payroll_history = payroll_history.filter(
+                    Q(employee__first_name__icontains=search_query) |
+                    Q(employee__last_name__icontains=search_query)
+                )
+    
+    # Apply pagination if not showing all
+    if not show_all:
+        payroll_history = payroll_history[:10]
+    
+    # Calculate summary statistics
     total_payroll = Payroll.objects.aggregate(total=models.Sum('gross_salary'))['total'] or 0
     total_employees = Employee.objects.filter(is_active='active').count()
     paid_count = Payroll.objects.filter(payment_status='paid').count()
     pending_count = Payroll.objects.filter(payment_status='pending').count()
     
-    if show_all:
-        payroll_history = Payroll.objects.select_related('employee').order_by('-pay_period', 'employee__first_name')
-    else:
-        payroll_history = Payroll.objects.select_related('employee').order_by('-pay_period', 'employee__first_name')[:10]
-    
     context = {
         'active_employees': active_employees,
         'payroll_history': payroll_history,
         'show_all': show_all,
+        'search_query': search_query,
         'total_payrolls': Payroll.objects.count(),
-        'total_payroll': "{:,.2f}".format(total_payroll),  # Format with commas
+        'total_payroll': "{:,.2f}".format(total_payroll),
         'total_employees': total_employees,
         'paid_count': paid_count,
         'pending_count': pending_count,
+        'today_date': timezone.now().strftime('%Y-%m-%d'), # Add today's date for min attribute
     }
     return render(request, 'payroll/payroll.html', context)
 
@@ -213,48 +299,78 @@ def generate_payroll(request):
     if request.method == 'POST':
         try:
             employee_id = request.POST.get('employee')
-            pay_date = request.POST.get('pay_date')
-            allowances = Decimal(request.POST.get('total_allowances', '0'))
-            deductions = Decimal(request.POST.get('total_deductions', '0'))
-            
-            if not employee_id or not pay_date:
+            pay_date_str = request.POST.get('pay_date')
+
+            if not employee_id or not pay_date_str:
                 return JsonResponse({
                     'status': 'error',
-                    'message': 'Employee and pay date are required'
+                    'message': 'Employee and pay date are required.'
+                }, status=400)
+
+            # Parse the date string to a datetime object
+            try:
+                pay_date = datetime.strptime(pay_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Invalid date format. Use YYYY-MM-DD'
+                }, status=400)
+
+            # Validate that the pay date is not in the past
+            today = timezone.now().date()
+            if pay_date < today:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Pay date cannot be in the past.'
+                }, status=400)
+
+            # Check if payroll already exists for this employee in the same month
+            existing_payroll = Payroll.objects.filter(
+                employee_id=employee_id,
+                pay_period__year=pay_date.year,
+                pay_period__month=pay_date.month
+            ).first()
+
+            if existing_payroll:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f'A payroll record already exists for this employee for {pay_date.strftime("%B %Y")}.'
                 }, status=400)
 
             employee = get_object_or_404(Employee, id=employee_id)
-            
-            # Create payroll record
+            allowances = Decimal(request.POST.get('total_allowances', '0.00'))
+
+            # Create payroll record with defaults
             payroll = Payroll.objects.create(
                 employee=employee,
                 pay_period=pay_date,
                 gross_salary=employee.salary,
                 total_allowances=allowances,
-                total_deductions=deductions,
-                net_salary=employee.salary + allowances - deductions,
+                tax_rate=Decimal('16.00'),
+                health_insurance=Decimal('2000.00'),
+                retirement_rate=Decimal('5.00'),
                 payment_status='pending'
             )
-            
+
             return JsonResponse({
                 'status': 'success',
                 'message': 'Payroll created successfully',
                 'data': {
-                    'detail_url': reverse('payroll_detail', args=[payroll.id])
+                    'detail_url': reverse('payroll_detail', args=[payroll.id]),
+                    'reference_id': payroll.reference_id
                 }
             })
-            
+
         except Exception as e:
             return JsonResponse({
                 'status': 'error',
-                'message': str(e)
+                'message': f'Error creating payroll: {str(e)}'
             }, status=400)
 
-    # GET request
-    context = {
-        'active_employees': Employee.objects.filter(is_active='active').order_by('first_name', 'last_name'),
-    }
-    return render(request, 'payroll/payroll.html', context)
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Invalid request method'
+    }, status=400)
 
 def get_payroll_periods():
     """Generate payroll periods for the next few months"""
@@ -293,7 +409,6 @@ def generate_payroll_pdf(request, payroll_id):
     try:
         payroll = get_object_or_404(Payroll.objects.select_related('employee'), id=payroll_id)
         
-        # Create response object with PDF mime type
         response = HttpResponse(content_type='application/pdf')
         filename = f"payroll_{payroll.employee.last_name}_{payroll.pay_period.strftime('%Y_%m')}.pdf"
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
@@ -312,57 +427,94 @@ def generate_payroll_pdf(request, payroll_id):
         # Add company header
         elements.append(Paragraph('Your Company Name', title_style))
         elements.append(Paragraph('Payroll Statement', header_style))
-        elements.append(Paragraph(f"Period: {payroll.pay_period.strftime('%B %Y')}", normal_style))
         elements.append(Spacer(1, 20))
         
-        # Employee information
+        # Employee information table
         employee_data = [
-            ['Name:', f"{payroll.employee.first_name} {payroll.employee.last_name}", 'Department:', 
-             dict(Employee.DEPARTMENT_CHOICES).get(payroll.employee.department, '')],
+            ['Employee Information', '', '', ''],
+            ['Name:', f"{payroll.employee.first_name} {payroll.employee.last_name}", 'Payment Status:', 
+             f"{payroll.payment_status_display.upper()}" if not payroll.is_paid else 'PAID'],
             ['Employee ID:', str(payroll.employee.id), 'Pay Period:', 
-             payroll.pay_period.strftime("%B %d, %Y")]
+             payroll.pay_period.strftime("%B %d, %Y")],
+            ['Status:', payroll.payment_status_display, 'Payment Date:', 
+             payroll.payment_date.strftime("%B %d, %Y") if payroll.payment_date else 'Pending']
         ]
         
         employee_table = Table(employee_data, colWidths=[100, 150, 100, 150])
         employee_table.setStyle(TableStyle([
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('GRID', (0, 1), (-1, -1), 1, colors.black),
+            ('SPAN', (0, 0), (-1, 0)),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('FONTWEIGHT', (0, 0), (-1, 0), 'BOLD'),
             ('PADDING', (0, 0), (-1, -1), 6),
+            ('TEXTCOLOR', (3, 1), (3, 1), colors.red if not payroll.is_paid else colors.green),
+            ('FONTWEIGHT', (3, 1), (3, 1), 'BOLD'),
         ]))
         elements.append(employee_table)
         elements.append(Spacer(1, 20))
         
-        # Salary details
+        # Salary breakdown table
         salary_data = [
-            ['Description', 'Amount'],
-            ['Gross Salary', f"KSh {payroll.gross_salary:,.2f}"],
+            ['Earnings & Deductions', 'Amount'],
+            ['Basic Salary', f"KSh {payroll.gross_salary:,.2f}"],
             ['Allowances', f"KSh {payroll.total_allowances:,.2f}"],
-            ['Deductions', f"KSh {payroll.total_deductions:,.2f}"],
+            ['Subtotal (Gross)', f"KSh {(payroll.gross_salary + payroll.total_allowances):,.2f}"],
+            ['', ''],
+            ['Deductions:', ''],
+            ['Tax ({:.1f}%)'.format(float(payroll.tax_rate)), f"KSh {payroll.tax_amount:,.2f}"],
+            ['Health Insurance', f"KSh {payroll.health_insurance:,.2f}"],
+            ['Retirement ({:.1f}%)'.format(float(payroll.retirement_rate)), f"KSh {payroll.retirement_amount:,.2f}"],
+            ['Other Deductions', f"KSh {payroll.total_deductions:,.2f}"],
+            ['Total Deductions', f"KSh {(payroll.tax_amount + payroll.health_insurance + payroll.retirement_amount + payroll.total_deductions):,.2f}"],
+            ['', ''],
             ['Net Salary', f"KSh {payroll.net_salary:,.2f}"]
         ]
         
         salary_table = Table(salary_data, colWidths=[300, 200])
         salary_table.setStyle(TableStyle([
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('GRID', (0, 0), (-1, 0), 1, colors.black),
+            ('GRID', (0, -1), (-1, -1), 1, colors.black),
+            ('LINEBELOW', (0, 2), (-1, 2), 1, colors.black),
+            ('LINEBELOW', (0, -3), (-1, -3), 1, colors.black),
             ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('BACKGROUND', (0, 5), (-1, 5), colors.lightgrey),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('PADDING', (0, 0), (-1, -1), 6),
             ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+            ('FONTWEIGHT', (0, 0), (-1, 0), 'BOLD'),
             ('FONTWEIGHT', (0, -1), (-1, -1), 'BOLD'),
+            ('NOSPLIT', (0, 0), (-1, -1)),
         ]))
         elements.append(salary_table)
         
-        # Footer
+        # Add footer
         elements.append(Spacer(1, 30))
-        elements.append(Paragraph(f"Generated on: {timezone.now().strftime('%B %d, %Y')}", normal_style))
+        elements.append(Paragraph(f"Generated on: {timezone.now().strftime('%B %d, %Y at %I:%M %p')}", normal_style))
         
-        # Build PDF
+        if not payroll.is_paid:
+            # Add a prominent watermark
+            elements.append(Paragraph(
+                "*** DRAFT - NOT YET PAID ***",
+                ParagraphStyle(
+                    'watermark',
+                    parent=normal_style,
+                    textColor=colors.red,
+                    fontSize=16,
+                    alignment=1,  # Center alignment
+                    spaceBefore=20,
+                    spaceAfter=20
+                )
+            ))
+            elements.append(Paragraph("*** This is not a payment confirmation ***", 
+                ParagraphStyle('warning', parent=normal_style, textColor=colors.red)))
+        
+        # Build and return PDF
         doc.build(elements)
-        
-        # Get PDF from buffer
         pdf = buffer.getvalue()
         buffer.close()
         response.write(pdf)
-        
         return response
         
     except Exception as e:
@@ -396,10 +548,61 @@ def mark_payroll_paid(request, payroll_id):
             return JsonResponse({
                 'status': 'error',
                 'message': 'Payroll is already paid'
-            }, status=400)
+        }, status=400)
             
     except Exception as e:
         return JsonResponse({
             'status': 'error',
             'message': str(e)
         }, status=400)
+
+def paid_payroll_list(request):
+    """View to display a list of all paid payrolls with pagination."""
+    paid_payrolls_list = Payroll.objects.filter(payment_status='paid').select_related('employee').order_by('-payment_date')
+    
+    paginator = Paginator(paid_payrolls_list, 15)  # Show 15 paid payrolls per page
+    page = request.GET.get('page')
+    
+    try:
+        paid_payrolls = paginator.page(page)
+    except PageNotAnInteger:
+        paid_payrolls = paginator.page(1)
+    except EmptyPage:
+        paid_payrolls = paginator.page(paginator.num_pages)
+        
+    context = {
+        'paid_payrolls': paid_payrolls,
+        'title': 'Paid Payroll History'
+    }
+    return render(request, 'payroll/paid_payroll_list.html', context)
+
+def pending_payroll_list(request):
+    """View to display a list of all pending payrolls with pagination."""
+    today = timezone.now().date()
+    show_all = request.GET.get('show_all', False)
+    pending_payrolls_list = Payroll.objects.filter(
+        payment_status='pending',
+        pay_period__gte=today  # Optional: Only show pending for today or future pay periods
+    ).select_related('employee').order_by('pay_period')  # Order by nearest pay period first
+
+    if not show_all:
+        paginator = Paginator(pending_payrolls_list, 15)  # Show 15 pending payrolls per page
+        page = request.GET.get('page')
+
+        try:
+            pending_payrolls = paginator.page(page)
+        except PageNotAnInteger:
+            # If page is not an integer, deliver first page.
+            pending_payrolls = paginator.page(1)
+        except EmptyPage:
+            # If page is out of range (e.g. 9999), deliver last page of results.
+            pending_payrolls = paginator.page(paginator.num_pages)
+    else:
+        pending_payrolls = pending_payrolls_list
+
+    context = {
+        'pending_payrolls': pending_payrolls,
+        'title': 'Pending Payroll List',
+        'show_all': show_all,
+    }
+    return render(request, 'payroll/pending_payroll_list.html', context) # Render renamed template

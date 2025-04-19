@@ -1,5 +1,6 @@
 {% extends 'base.html'%}
 {% load static %}
+{% load humanize %}  <!-- Add this line -->
 {% block content %}
 <div class="container-fluid px-4">
     <div class="row mb-4">
@@ -75,19 +76,31 @@
                                 <tbody>
                                     <tr>
                                         <th width="30%">Gross Salary:</th>
-                                        <td>KSh {{ payroll.gross_salary|floatformat:2 }}</td>
+                                        <td>KSh {{ payroll.gross_salary|floatformat:2|intcomma }}</td>
                                     </tr>
                                     <tr>
                                         <th>Allowances:</th>
-                                        <td>KSh {{ payroll.total_allowances|floatformat:2 }}</td>
+                                        <td>KSh {{ payroll.total_allowances|floatformat:2|intcomma }}</td>
                                     </tr>
                                     <tr>
-                                        <th>Deductions:</th>
-                                        <td>KSh {{ payroll.total_deductions|floatformat:2 }}</td>
+                                        <th>Tax ({{ payroll.tax_rate }}%):</th>
+                                        <td>KSh {{ payroll.tax_amount|floatformat:2|intcomma }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Health Insurance:</th>
+                                        <td>KSh {{ payroll.health_insurance|floatformat:2|intcomma }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Retirement ({{ payroll.retirement_rate }}%):</th>
+                                        <td>KSh {{ payroll.retirement_amount|floatformat:2|intcomma }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Other Deductions:</th>
+                                        <td>KSh {{ payroll.total_deductions|floatformat:2|intcomma }}</td>
                                     </tr>
                                     <tr class="table-active fw-bold">
                                         <th>Net Salary:</th>
-                                        <td>KSh {{ payroll.net_salary|floatformat:2 }}</td>
+                                        <td>KSh {{ payroll.net_salary|floatformat:2|intcomma }}</td>
                                     </tr>
                                 </tbody>
                             </table>

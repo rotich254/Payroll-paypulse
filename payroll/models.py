@@ -1,5 +1,7 @@
 from django.db import models
 from django.utils import timezone
+from decimal import Decimal
+import uuid
 
 class Employee(models.Model):
     ACTIVE_STATUS = [
@@ -39,6 +41,13 @@ class Employee(models.Model):
         return f"{self.first_name} {self.last_name}"
 
 class Payroll(models.Model):
+    reference_id = models.CharField(
+        max_length=50,  # Increased length to accommodate UUID
+        unique=True,
+        help_text="Unique reference ID for this payroll",
+        editable=False  # Prevent manual editing
+    )
+
     PAYMENT_STATUS_CHOICES = [
         ('paid', 'Paid'),
         ('pending', 'Pending'),
@@ -61,12 +70,25 @@ class Payroll(models.Model):
     payment_date = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    health_insurance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    retirement_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    retirement_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     class Meta:
         ordering = ['-pay_period', 'employee__first_name']
         unique_together = ['employee', 'pay_period']
 
     def save(self, *args, **kwargs):
+        # Generate unique reference ID if not set
+        if not self.reference_id:
+            year = self.pay_period.year if self.pay_period else timezone.now().year
+            month = self.pay_period.month if self.pay_period else timezone.now().month
+            employee_id = str(self.employee.id).zfill(4)  # Pad employee ID with zeros
+            unique_id = str(uuid.uuid4())[:6]  # Use first 6 chars of UUID
+            self.reference_id = f"PAY-{year}{month:02d}-{employee_id}-{unique_id}"
+
         # Set initial values if not provided
         if not self.pay_period and self.employee:
             self.pay_period = self.employee.hire_date
@@ -75,8 +97,29 @@ class Payroll(models.Model):
         if self.employee and not self.gross_salary:
             self.gross_salary = self.employee.salary
 
-        # Calculate net salary
-        self.net_salary = (self.gross_salary + self.total_allowances) - self.total_deductions
+        # Convert all values to Decimal to avoid float operations
+        gross_salary = Decimal(str(self.gross_salary))
+        total_allowances = Decimal(str(self.total_allowances))
+        total_deductions = Decimal(str(self.total_deductions))
+        tax_rate = Decimal(str(self.tax_rate))
+        health_insurance = Decimal(str(self.health_insurance))
+        retirement_rate = Decimal(str(self.retirement_rate))
+
+        # Calculate tax amount
+        self.tax_amount = (gross_salary * tax_rate / Decimal('100'))
+        
+        # Calculate retirement amount
+        self.retirement_amount = (gross_salary * retirement_rate / Decimal('100'))
+        
+        # Calculate net salary with all deductions
+        self.net_salary = (
+            gross_salary 
+            + total_allowances 
+            - total_deductions 
+            - self.tax_amount 
+            - health_insurance 
+            - self.retirement_amount
+        )
         
         # Set payment date when status changes to paid
         if self.payment_status == 'paid' and not self.payment_date:

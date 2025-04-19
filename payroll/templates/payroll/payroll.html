@@ -112,44 +112,46 @@
               <div class="card-body">
                 <h4 class="card-title mb-4">Create New Payroll Run</h4>
                 <form id="payrollForm" class="row g-3" method="POST" action="{% url 'generate_payroll' %}">
-                  {% csrf_token %}
-                  <div class="col-md-4">
-                    <label for="employee" class="form-label">Employee</label>
-                    <select class="form-select select2" id="employee" name="employee" required>
-                        <option value="">Search employee name...</option>
-                        {% for employee in active_employees %}
-                            <option value="{{ employee.id }}" data-salary="{{ employee.salary }}">
-                                {{ employee.first_name }} {{ employee.last_name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                  </div>
-                  
-                  <div class="col-md-4">
-                    <label for="pay_date" class="form-label">Pay Date*</label>
-                    <input type="date" class="form-control" id="pay_date" name="pay_date" required>
-                  </div>
-                  
-                  <div class="col-md-4">
-                    <label for="total_allowances" class="form-label">Allowances</label>
-                    <input type="number" class="form-control" id="total_allowances" name="total_allowances" value="0.00" step="0.01" min="0">
-                  </div>
-                  
-                  <div class="col-md-4">
-                    <label for="total_deductions" class="form-label">Deductions</label>
-                    <input type="number" class="form-control" id="total_deductions" name="total_deductions" value="0.00" step="0.01" min="0">
-                  </div>
-                  
-                  <div class="col-md-4">
-                    <label for="net_salary" class="form-label">Net Salary</label>
-                    <input type="text" class="form-control" id="net_salary" readonly>
-                  </div>
-                  
-                  <div class="col-12">
-                    <button type="submit" class="btn btn-primary">
-                      <i class="bi bi-save me-2"></i>Create Payroll
-                    </button>
-                  </div>
+                    {% csrf_token %}
+                    <div class="col-md-4">
+                        <label for="employee" class="form-label">Employee*</label>
+                        <select class="form-select select2" id="employee" name="employee" required>
+                            <option value="">Search employee name...</option>
+                            {% for employee in active_employees %}
+                                <option value="{{ employee.id }}" data-salary="{{ employee.salary }}">
+                                    {{ employee.first_name }} {{ employee.last_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="pay_date" class="form-label">Pay Date*</label>
+                        <input type="date" class="form-control" id="pay_date" name="pay_date" required min="{{ today_date }}">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="total_allowances" class="form-label">Allowances</label>
+                        <div class="input-group">
+                            <span class="input-group-text">KSh</span>
+                            <input type="number" class="form-control" id="total_allowances" name="total_allowances" 
+                                   value="0" min="0" step="0.01">
+                        </div>
+                    </div>
+
+                    <!-- Hidden inputs for calculated values -->
+                    <input type="hidden" id="tax_amount" name="tax_amount" value="0">
+                    <input type="hidden" id="retirement_amount" name="retirement_amount" value="0">
+                    <input type="hidden" id="net_salary" name="net_salary" value="0">
+
+                    <!-- Deductions Breakdown will be inserted here -->
+                    <div id="deductionsBreakdown" class="col-12"></div>
+
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-2"></i>Generate Payroll
+                        </button>
+                    </div>
                 </form>
               </div>
             </div>
@@ -160,17 +162,57 @@
         <div class="row mb-4">
           <div class="col-12">
             <div class="card border-0 shadow">
+              <div class="card-header">
+                <h5 class="mb-0">
+                    Payroll History
+                    {% if search_query %}
+                    <small class="text-muted">
+                        - Search results for "{{ search_query }}"
+                    </small>
+                    {% endif %}
+                </h5>
+              </div>
               <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                  <h4 class="card-title mb-0">Payroll History</h4>
-                  <div class="input-group" style="width: 300px;">
-                    <input type="text" class="form-control" id="searchPayroll" placeholder="Search payroll...">
-                    <button class="btn btn-primary" type="button">
-                      <i class="bi bi-search"></i>
-                    </button>
-                  </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <form method="GET" class="d-flex">
+                            <div class="input-group">
+                                <input type="text" 
+                                       class="form-control" 
+                                       placeholder="Search by employee name or reference ID..." 
+                                       name="search"
+                                       value="{{ search_query }}">
+                                <button class="btn btn-outline-primary" type="submit">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                                {% if search_query or show_all %}
+                                    <a href="{% url 'payroll' %}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-x-lg"></i>
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        {% if show_all %}
+                            <a href="{% url 'payroll' %}" class="btn btn-outline-primary">
+                                <i class="bi bi-list-ul me-2"></i>Show Recent
+                            </a>
+                        {% else %}
+                            <a href="{% url 'payroll' %}?show_all=true{% if search_query %}&search={{ search_query }}{% endif %}" 
+                               class="btn btn-outline-primary">
+                                <i class="bi bi-list me-2"></i>Show All
+                            </a>
+                        {% endif %}
+                    </div>
                 </div>
-                
+
+                {% if search_query and not payroll_history %}
+                <div class="alert alert-info">
+                    No payroll records found matching "{{ search_query }}"
+                </div>
+                {% endif %}
+
                 <div class="table-responsive">
                   <table class="table align-middle" id="payrollHistoryTable">
                     <thead>
@@ -188,7 +230,7 @@
                     <tbody>
                       {% for payroll in payroll_history %}
                       <tr>
-                        <td>PAY-{{ payroll.pay_period|date:"Y-m" }}-{{ forloop.counter }}</td>
+                        <td>PAY-{{ payroll.pay_period|date:"Y-m" }}-{{ forloop.counter }}</td> {# Use counter for standard loop #}
                         <td>{{ payroll.employee.first_name }} {{ payroll.employee.last_name }}</td>
                         <td>{{ payroll.employee.get_department_display }}</td>
                         <td>{{ payroll.pay_period|date:"F j-" }}{% if payroll.pay_period.day <= 15 %}15{% else %}{{ payroll.pay_period|date:"t" }}{% endif %}, {{ payroll.pay_period|date:"Y" }}</td>
@@ -418,7 +460,6 @@
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script type="module" src="/src/payroll.ts"></script>
   {% block extra_js %}
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -428,66 +469,105 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('payrollForm');
     const employeeSelect = document.getElementById('employee');
     const allowancesInput = document.getElementById('total_allowances');
-    const deductionsInput = document.getElementById('total_deductions');
-    const netSalaryInput = document.getElementById('net_salary');
     let currentGrossSalary = 0;
 
-    // Initialize Select2
-    $('.select2').select2({
-        theme: 'bootstrap-5',
-        placeholder: 'Search employee name...',
-        allowClear: true
-    });
+    function calculateDeductions(grossSalary) {
+        // Convert all inputs to Decimal strings with 2 decimal places
+        const allowances = (parseFloat(allowancesInput.value) || 0).toFixed(2);
+        const taxRate = "16.00"; // Default tax rate 16%
+        const healthInsurance = "2000.00"; // Default health insurance
+        const retirementRate = "5.00"; // Default retirement rate 5%
 
-    // Format currency as KES
-    function formatCurrency(amount) {
-        return new Intl.NumberFormat('en-KE', { 
-            style: 'currency', 
-            currency: 'KES',
+        // Calculate deductions using fixed decimal strings
+        const taxAmount = ((parseFloat(grossSalary) * parseFloat(taxRate)) / 100).toFixed(2);
+        const retirementAmount = ((parseFloat(grossSalary) * parseFloat(retirementRate)) / 100).toFixed(2);
+        
+        // Calculate net salary
+        const netSalary = (
+            parseFloat(grossSalary) + 
+            parseFloat(allowances) - 
+            parseFloat(taxAmount) - 
+            parseFloat(healthInsurance) - 
+            parseFloat(retirementAmount)
+        ).toFixed(2);
+
+        // Store calculated values as strings with 2 decimal places
+        document.getElementById('tax_amount').value = taxAmount;
+        document.getElementById('retirement_amount').value = retirementAmount;
+        document.getElementById('net_salary').value = netSalary;
+
+        // Update breakdown display
+        updateDeductionsBreakdown(
+            grossSalary.toFixed(2),
+            allowances,
+            taxAmount,
+            healthInsurance,
+            retirementAmount,
+            netSalary
+        );
+    }
+
+    function updateDeductionsBreakdown(gross, allowances, tax, health, retirement, net) {
+        const breakdownHtml = `
+            <div class="mt-4">
+                <h6 class="mb-3">Salary Breakdown</h6>
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <td>Gross Salary</td>
+                            <td class="text-end">KSh ${formatNumber(gross)}</td>
+                        </tr>
+                        <tr>
+                            <td>Allowances</td>
+                            <td class="text-end">+ KSh ${formatNumber(allowances)}</td>
+                        </tr>
+                        <tr>
+                            <td>Tax (16%)</td>
+                            <td class="text-end">- KSh ${formatNumber(tax)}</td>
+                        </tr>
+                        <tr>
+                            <td>Health Insurance</td>
+                            <td class="text-end">- KSh ${formatNumber(health)}</td>
+                        </tr>
+                        <tr>
+                            <td>Retirement (5%)</td>
+                            <td class="text-end">- KSh ${formatNumber(retirement)}</td>
+                        </tr>
+                        <tr class="table-active fw-bold">
+                            <td>Net Salary</td>
+                            <td class="text-end">KSh ${formatNumber(net)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        `;
+        document.getElementById('deductionsBreakdown').innerHTML = breakdownHtml;
+    }
+
+    // Format numbers with commas and 2 decimal places
+    function formatNumber(number) {
+        return number.toLocaleString('en-KE', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
-        }).format(amount).replace('KES', 'KSh');
+        });
     }
 
-    // Calculate net salary
-    function calculateNetSalary() {
-        const allowances = parseFloat(allowancesInput.value) || 0;
-        const deductions = parseFloat(deductionsInput.value) || 0;
-        const netSalary = currentGrossSalary + allowances - deductions;
-        netSalaryInput.value = formatCurrency(netSalary);
-    }
-
-    // Handle employee selection
+    // Event listeners
     employeeSelect.addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
         if (selectedOption.value) {
             currentGrossSalary = parseFloat(selectedOption.getAttribute('data-salary'));
-            calculateNetSalary();
-        } else {
-            currentGrossSalary = 0;
-            netSalaryInput.value = '';
-            allowancesInput.value = '0.00';
-            deductionsInput.value = '0.00';
+            calculateDeductions(currentGrossSalary);
         }
     });
 
-    // Real-time calculation for allowances
     allowancesInput.addEventListener('input', function() {
-        if (this.value === '') this.value = '0.00';
-        calculateNetSalary();
+        if (currentGrossSalary > 0) {
+            calculateDeductions(currentGrossSalary);
+        }
     });
 
-    // Real-time calculation for deductions
-    deductionsInput.addEventListener('input', function() {
-        if (this.value === '') this.value = '0.00';
-        calculateNetSalary();
-    });
-
-    // Format initial values
-    allowancesInput.value = '0.00';
-    deductionsInput.value = '0.00';
-
-    // Handle form submission
+    // Form submission handler
     form.addEventListener('submit', function(e) {
         e.preventDefault();
 
@@ -496,13 +576,14 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        if (!document.getElementById('pay_date').value) {
-            alert('Please select a pay date');
-            return;
-        }
-
         const formData = new FormData(this);
-        formData.append('gross_salary', currentGrossSalary.toString());
+        // Append values as strings with 2 decimal places
+        formData.append('tax_rate', '16.00');
+        formData.append('health_insurance', '2000.00');
+        formData.append('retirement_rate', '5.00');
+        formData.append('tax_amount', document.getElementById('tax_amount').value);
+        formData.append('retirement_amount', document.getElementById('retirement_amount').value);
+        formData.append('net_salary', document.getElementById('net_salary').value);
 
         fetch('{% url "generate_payroll" %}', {
             method: 'POST',
@@ -514,7 +595,6 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                alert('Payroll created successfully!');
                 window.location.href = data.data.detail_url;
             } else {
                 alert('Error: ' + data.message);
@@ -526,16 +606,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
-
-// Add this after your existing DOMContentLoaded event listener
-
-function generatePDF(payrollId) {
-    // Create the URL for the PDF endpoint
-    const pdfUrl = `/payroll/${payrollId}/pdf/`;
-    
-    // Open the PDF in a new window/tab or download it
-    window.open(pdfUrl, '_blank');
-}
 </script>
 </body>
 </html>
