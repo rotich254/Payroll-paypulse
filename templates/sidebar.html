@@ -1,5 +1,5 @@
     
-    <div class="bg-primary-dark" id="sidebar-wrapper">
+<div class="bg-primary-dark" id="sidebar-wrapper">
       <div class="sidebar-heading text-center py-4 fs-4 fw-bold text-white">
         <i class="bi bi-cash-coin me-2"></i>PayPulse
       </div>
@@ -7,7 +7,7 @@
         <a href="{% url 'index'%}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
           <i class="bi bi-speedometer2 me-2"></i>Dashboard
         </a>
-        <a href="{% url 'employee_list'%}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold active">
+        <a href="{% url 'employee_list'%}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
           <i class="bi bi-people me-2"></i>Employees
         </a>
         <a href="{% url 'payroll'%}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
@@ -16,7 +16,7 @@
         <a href="#" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
           <i class="bi bi-calendar-event me-2"></i>Attendance
         </a>
-        <a href="#" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
+        <a href="{% url 'reports' %}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
           <i class="bi bi-card-checklist me-2"></i>Reports
         </a>
         <a href="#" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">

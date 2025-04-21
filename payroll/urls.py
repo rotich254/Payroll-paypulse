@@ -16,4 +16,10 @@ urlpatterns = [
     path('payroll/<int:payroll_id>/mark_paid/', views.mark_payroll_paid, name='mark_payroll_paid'),
     path('paid-payrolls/', views.paid_payroll_list, name='paid_payroll_list'), # New URL for paid payrolls
     path('pending-payrolls/', views.pending_payroll_list, name='pending_payroll_list'), # Renamed URL and view
+    
+    # Reports URLs
+    path('reports/', views.reports, name='reports'),
+    path('reports/<int:report_id>/download/', views.download_report, name='download_report'), # Added download URL
+    path('reports/<int:report_id>/delete/', views.delete_report, name='delete_report'),     # Added delete URL
 ]
+

@@ -137,3 +137,31 @@ class Payroll(models.Model):
     @property
     def payment_status_display(self):
         return dict(self.PAYMENT_STATUS_CHOICES)[self.payment_status]
+
+
+# Add after your existing models
+class Report(models.Model):
+    REPORT_TYPES = [
+        ('payroll', 'Payroll Summary'),
+        ('department', 'Department Summary'),
+        ('employee', 'Employee Summary'),
+        ('tax', 'Tax Summary'),
+    ]
+
+    REPORT_STATUS = [
+        ('generated', 'Generated'),
+        ('failed', 'Failed'),
+        ('processing', 'Processing'),
+    ]
+
+    name = models.CharField(max_length=255)
+    type = models.CharField(max_length=20, choices=REPORT_TYPES)
+    generated_date = models.DateTimeField(auto_now_add=True)
+    period_start = models.DateField()
+    period_end = models.DateField()
+    department = models.CharField(max_length=20, choices=Employee.DEPARTMENT_CHOICES, null=True, blank=True)
+    file = models.FileField(upload_to='reports/')
+    status = models.CharField(max_length=20, choices=REPORT_STATUS, default='processing')
+    
+    def __str__(self):
+        return f"{self.name} - {self.generated_date.strftime('%Y-%m-%d')}"
