@@ -2,6 +2,42 @@ from django.db import models
 from django.utils import timezone
 from decimal import Decimal
 import uuid
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+# Function to generate a default avatar path or handle missing avatars
+def default_avatar_path():
+    return 'avatars/default_avatar.png' # Make sure this default image exists in your media/avatars/ directory
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    avatar = models.ImageField(default=default_avatar_path, upload_to='avatars/')
+    bio = models.TextField(max_length=500, blank=True)
+    phone_number = models.CharField(max_length=15, blank=True)
+    # Add any other profile-specific fields you need
+
+    def __str__(self):
+        return f'{self.user.username} Profile'
+
+    # Optional: Method to get avatar URL, handling cases where avatar might be missing
+    @property
+    def avatar_url(self):
+        try:
+            url = self.avatar.url
+        except ValueError: # Catches if self.avatar is None or has no file associated
+            url = default_avatar_path() # Or link to a static default avatar if preferred
+            # If using static, ensure default_avatar.png is in your staticfiles dirs
+            # from django.templatetags.static import static
+            # url = static('images/default_avatar.png')
+        return url
+
+@receiver(post_save, sender=User)
+def create_or_update_user_profile(sender, instance, created, **kwargs):
+    # Use get_or_create to ensure a profile exists or is created.
+    # This handles new user creation and updates to existing users (e.g. during login)
+    # where a profile might be missing.
+    Profile.objects.get_or_create(user=instance)
 
 class Employee(models.Model):
     ACTIVE_STATUS = [

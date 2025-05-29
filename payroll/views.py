@@ -1,8 +1,8 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.db import models  # Add this import
-from .models import Employee, Payroll, Report
-from .forms import EmployeeForm
+from .models import Employee, Payroll, Report, Profile
+from .forms import EmployeeForm, UserUpdateForm, ProfileUpdateForm
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_protect
@@ -18,6 +18,8 @@ import tempfile
 from django.db.models import Sum, Count
 import json
 from django.db.models import Sum
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 
 # Replace WeasyPrint imports with ReportLab
 from reportlab.pdfgen import canvas
@@ -39,7 +41,7 @@ from openpyxl.utils import get_column_letter
 # Configure basic logging (consider moving to settings.py for production)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-
+@login_required
 def index(request):
     # Get counts for all employee statuses
     total_employees = Employee.objects.count()
@@ -106,6 +108,7 @@ def index(request):
 
     return render(request, 'index.html', context)
 
+@login_required
 def employee_list(request):
     status_filter = request.GET.get('status', 'all')
     department_filter = request.GET.get('department', 'all')
@@ -164,6 +167,7 @@ def employee_list(request):
     
     return render(request, 'payroll/employees.html', context)
 
+@login_required
 def add_employee(request):
     if request.method == 'POST':
         form = EmployeeForm(request.POST)
@@ -190,6 +194,7 @@ def add_employee(request):
     }
     return render(request, 'payroll/add_employee.html', context)
 
+@login_required
 def edit_employee(request, employee_id):
     employee = get_object_or_404(Employee, id=employee_id)
     if request.method == 'POST':
@@ -210,6 +215,7 @@ def edit_employee(request, employee_id):
     }
     return render(request, 'payroll/edit_employee.html', context)
 
+@login_required
 @require_POST
 @csrf_protect
 def remove_employee(request, employee_id):
@@ -221,6 +227,7 @@ def remove_employee(request, employee_id):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
     
     
+@login_required
 @require_POST
 @csrf_protect
 def update_employee_status(request, employee_id):
@@ -247,6 +254,7 @@ def update_employee_status(request, employee_id):
         }, status=400)
         
         
+@login_required
 def payroll(request):
     show_all = request.GET.get('show_all', False)
     search_query = request.GET.get('search', '').strip()
@@ -307,6 +315,7 @@ def payroll(request):
     }
     return render(request, 'payroll/payroll.html', context)
 
+@login_required
 def generate_payroll(request):
     if request.method == 'POST':
         try:
@@ -402,6 +411,7 @@ def get_payroll_periods():
         ])
     return periods
 
+@login_required
 def payroll_detail(request, payroll_id):
     """View for displaying detailed payroll information"""
     payroll = get_object_or_404(Payroll.objects.select_related('employee'), id=payroll_id)
@@ -416,6 +426,7 @@ def payroll_detail(request, payroll_id):
     }
     return render(request, 'payroll/payroll_detail.html', context)
 
+@login_required
 def generate_payroll_pdf(request, payroll_id):
     """Generate PDF for a specific payroll record using ReportLab"""
     try:
@@ -533,6 +544,7 @@ def generate_payroll_pdf(request, payroll_id):
         messages.error(request, f'Error generating PDF: {str(e)}')
         return redirect('payroll_detail', payroll_id=payroll_id)
 
+@login_required
 @require_POST
 @csrf_protect
 def mark_payroll_paid(request, payroll_id):
@@ -568,6 +580,7 @@ def mark_payroll_paid(request, payroll_id):
             'message': str(e)
         }, status=400)
 
+@login_required
 def paid_payroll_list(request):
     """View to display a list of all paid payrolls with pagination."""
     paid_payrolls_list = Payroll.objects.filter(payment_status='paid').select_related('employee').order_by('-payment_date')
@@ -588,6 +601,7 @@ def paid_payroll_list(request):
     }
     return render(request, 'payroll/paid_payroll_list.html', context)
 
+@login_required
 def pending_payroll_list(request):
     """View to display a list of all pending payrolls with pagination."""
     today = timezone.now().date()
@@ -619,7 +633,7 @@ def pending_payroll_list(request):
     }
     return render(request, 'payroll/pending_payroll_list.html', context) # Render renamed template
 
-
+@login_required
 def reports(request):
     if request.method == 'POST':
         report_type = request.POST.get('report_type')
@@ -664,6 +678,7 @@ def reports(request):
         'departments': departments,
     })
 
+@login_required
 def generate_payroll_report(request, start_date, end_date, department=None):
     logging.info(f"Generating Full Excel Payroll Report for period {start_date} to {end_date}, department: {department}")
     try:
@@ -847,6 +862,7 @@ def generate_payroll_report(request, start_date, end_date, department=None):
     except Exception as e:
         logging.error(f"Error generating Excel payroll detail report: {str(e)}", exc_info=True); messages.error(request, f'Error generating payroll report: {str(e)}'); return redirect('reports')
 
+@login_required
 def generate_department_report(request, start_date, end_date, department=None):
     logging.info(f"Generating Excel department report for period {start_date} to {end_date}, department: {department}")
     try:
@@ -1089,6 +1105,7 @@ def generate_department_report(request, start_date, end_date, department=None):
     except Exception as e:
         logging.error(f"Error generating Excel department report: {str(e)}", exc_info=True); messages.error(request, f'Error generating department report: {str(e)}'); return redirect('reports')
 
+@login_required
 def generate_employee_report(request, start_date, end_date, department=None):
     logging.info(f"Generating Excel employee report for period {start_date} to {end_date}, department: {department}")
     try:
@@ -1299,6 +1316,7 @@ def generate_employee_report(request, start_date, end_date, department=None):
     except Exception as e:
         logging.error(f"Error generating Excel employee report: {str(e)}", exc_info=True); messages.error(request, f'Error generating employee report: {str(e)}'); return redirect('reports')
 
+@login_required
 def generate_tax_report(request, start_date, end_date, department=None):
     logging.info(f"Generating Excel tax report for period {start_date} to {end_date}, department: {department}")
     try:
@@ -1497,6 +1515,7 @@ def generate_tax_report(request, start_date, end_date, department=None):
     except Exception as e:
         logging.error(f"Error generating Excel tax report: {str(e)}", exc_info=True); messages.error(request, f'Error generating tax report: {str(e)}'); return redirect('reports')
 
+@login_required
 @require_POST
 @csrf_protect
 def delete_report(request, report_id):
@@ -1513,6 +1532,7 @@ def delete_report(request, report_id):
         messages.error(request, f'Error deleting report: {str(e)}')
     return redirect('reports')
 
+@login_required
 def download_report(request, report_id):
     report = get_object_or_404(Report, id=report_id)
     if not report.file:
@@ -1535,3 +1555,32 @@ def download_report(request, report_id):
         logging.error(f"Error serving report {report_id} ('{report.name}'): {str(e)}", exc_info=True)
         messages.error(request, "Error accessing report file.")
         return redirect('reports')
+
+@login_required
+def profile(request):
+    if request.method == 'POST':
+        u_form = UserUpdateForm(request.POST, instance=request.user)
+        p_form = ProfileUpdateForm(request.POST,
+                                   request.FILES, # Important for file uploads
+                                   instance=request.user.profile)
+        if u_form.is_valid() and p_form.is_valid():
+            u_form.save()
+            p_form.save()
+            messages.success(request, f'Your account has been updated!')
+            return redirect('profile')
+        else:
+            # Combine form errors for display if needed, or just a generic message
+            error_message = "Please correct the errors below. "
+            # You could iterate through u_form.errors and p_form.errors to build a more specific message
+            messages.error(request, error_message)
+
+    else:
+        u_form = UserUpdateForm(instance=request.user)
+        p_form = ProfileUpdateForm(instance=request.user.profile)
+
+    context = {
+        'u_form': u_form,
+        'p_form': p_form,
+        'title': 'User Profile' 
+    }
+    return render(request, 'payroll/profile.html', context)

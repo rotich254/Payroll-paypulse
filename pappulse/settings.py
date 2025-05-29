@@ -111,7 +111,16 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'  # Directory for collected static files
 # Only if you're running in development:
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
+# Media files (user-uploaded content)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Authentication settings
+LOGIN_REDIRECT_URL = '/'
+LOGIN_URL = 'login'
+LOGOUT_REDIRECT_URL = 'login'
