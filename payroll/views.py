@@ -27,7 +27,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter # Keep letter for potential reference, but remove landscape
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 # Remove ReportLab platypus imports
-# from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak 
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak 
 from io import BytesIO
 from django.core.files.base import ContentFile  # Add this import
 import logging # Add logging import
