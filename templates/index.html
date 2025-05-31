@@ -1,391 +1,295 @@
+{% extends 'base.html' %}
 {% load static %}
 {% load humanize %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PayPulse - Modern Payroll System</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap">
-  <script type="module" crossorigin src="{% static 'css/script.js'%}"></script>
-  <link rel="stylesheet" crossorigin href="{% static 'css/style.css' %}">
-  <!-- Add this in the head section, after other CSS links -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
-  <div class="d-flex" id="wrapper">
-    <!-- Sidebar -->
-{% include 'sidebar.html'%}
-    <!-- Page Content -->
-    <div id="page-content-wrapper">
-      <nav class="navbar navbar-expand-lg navbar-light bg-transparent py-4 px-4">
-        <div class="d-flex align-items-center">
-          <i class="bi bi-list fs-2 me-3" id="menu-toggle"></i>
-          <h2 class="fs-2 m-0">Dashboard</h2>
+{% block title %}Dashboard - PayPulse{% endblock %}
+
+{% block extra_css %}
+<style>
+  .dashboard-card {
+    transition: all 0.3s ease;
+  }
+  .dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+  }
+  .chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+  }
+  @media (max-width: 767.98px) {
+    .dashboard-stats .col-md-3 {
+      margin-bottom: 1rem;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+  <h2 class="fs-2 mb-4">Dashboard</h2>
+  
+  <!-- Dashboard Stats -->
+  <div class="row g-3 my-2 dashboard-stats">
+    <!-- Total Employees Card -->
+    <div class="col-md-3 col-sm-6">
+      <div class="p-3 bg-white shadow-sm d-flex justify-content-around align-items-center rounded dashboard-card">
+        <div>
+          <h3 class="fs-2">{{ total_employees }}</h3>
+          <p class="fs-5">Total Employees</p>
         </div>
+        <i class="bi bi-people fs-1 primary-text border rounded-full bg-primary-light p-3"></i>
+      </div>
+    </div>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-          data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-          aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown"
-                role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-person-circle fs-5 me-2"></i>
-                {% if user.is_authenticated %}
-                  {{ user.username|capfirst }}
-                {% else %}
-                  User
-                {% endif %}
-              </a>
-              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                {% if user.is_authenticated %}
-                  <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profile</a></li>
-                  <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Settings</a></li>
-                  <li><hr class="dropdown-divider"></li>
-                  <li>
-                    <form method="post" action="{% url 'logout' %}" style="margin:0;">
-                        {% csrf_token %}
-                        <button type="submit" class="dropdown-item">
-                            <i class="bi bi-box-arrow-right me-2"></i>Logout
-                        </button>
-                    </form>
-                  </li>
-                {% else %}
-                  <li><a class="dropdown-item" href="{% url 'login' %}"><i class="bi bi-box-arrow-in-right me-2"></i>Login</a></li>
-                {% endif %}
-              </ul>
-            </li>
-          </ul>
+    <!-- Active Employees Card -->
+    <div class="col-md-3 col-sm-6">
+      <div class="p-3 bg-white shadow-sm d-flex justify-content-around align-items-center rounded dashboard-card">
+        <div>
+          <h3 class="fs-2">{{ active_employees }}</h3>
+          <p class="fs-5">Active Employees</p>
         </div>
-      </nav>
+        <i class="bi bi-person-check fs-1 text-success border rounded-full bg-success-light p-3"></i>
+      </div>
+    </div>
 
-      <div class="container-fluid px-4">
-        <div class="row g-3 my-2">
-          <!-- Total Employees Card -->
-          <div class="col-md-3">
-            <div class="p-3 bg-white shadow-sm d-flex justify-content-around align-items-center rounded card-hover">
-              <div>
-                <h3 class="fs-2">{{ total_employees }}</h3>
-                <p class="fs-5">Total Employees</p>
-              </div>
-              <i class="bi bi-people fs-1 primary-text border rounded-full bg-primary-light p-3"></i>
-            </div>
-          </div>
-
-          <!-- Active Employees Card -->
-          <div class="col-md-3">
-            <div class="p-3 bg-white shadow-sm d-flex justify-content-around align-items-center rounded card-hover">
-              <div>
-                <h3 class="fs-2">{{ active_employees }}</h3>
-                <p class="fs-5">Active Employees</p>
-              </div>
-              <i class="bi bi-person-check fs-1 text-success border rounded-full bg-success-light p-3"></i>
-            </div>
-          </div>
-
-          <!-- On Leave Employees Card -->
-          <div class="col-md-3">
-            <div class="p-3 bg-white shadow-sm d-flex justify-content-around align-items-center rounded card-hover">
-              <div>
-                <h3 class="fs-2">{{ on_leave_employees }}</h3>
-                <p class="fs-5">On Leave</p>
-              </div>
-              <i class="bi bi-person-slash fs-1 text-warning border rounded-full bg-warning-light p-3"></i>
-            </div>
-          </div>
-
-          <!-- Probation Employees Card -->
-          <div class="col-md-3">
-            <div class="p-3 bg-white shadow-sm d-flex justify-content-around align-items-center rounded card-hover">
-              <div>
-                <h3 class="fs-2">{{ probation_employees }}</h3>
-                <p class="fs-5">On Probation</p>
-              </div>
-              <i class="bi bi-person-exclamation fs-1 text-info border rounded-full bg-info-light p-3"></i>
-            </div>
-          </div>
+    <!-- On Leave Employees Card -->
+    <div class="col-md-3 col-sm-6">
+      <div class="p-3 bg-white shadow-sm d-flex justify-content-around align-items-center rounded dashboard-card">
+        <div>
+          <h3 class="fs-2">{{ on_leave_employees }}</h3>
+          <p class="fs-5">On Leave</p>
         </div>
+        <i class="bi bi-person-slash fs-1 text-warning border rounded-full bg-warning-light p-3"></i>
+      </div>
+    </div>
 
-        <div class="row my-5">
-          <div class="col-md-6">
-            <div class="bg-white rounded shadow p-4">
-              <h3 class="fs-4 mb-3">Recent Payments</h3>
-              <div class="table-responsive">
-                <table class="table bg-white rounded shadow-sm table-hover">
-                  <thead>
-                    <tr>
-                      <th scope="col">Employee</th>
-                      <th scope="col">Department</th>
-                      <th scope="col">Net Amount</th>
-                      <th scope="col">Status</th>
-                      <th scope="col">Actions</th> {# Added Actions Header #}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for payroll in recent_payrolls %}
-                    <tr>
-                      <td>{{ payroll.employee.first_name }} {{ payroll.employee.last_name }}</td>
-                      <td>{{ payroll.employee.get_department_display }}</td>
-                      <td>KSh {{ payroll.net_salary|floatformat:2|intcomma }}</td>
-                      <td>
-                        <span class="badge bg-success"> {# Since we only show paid, badge is always success #}
-                          {{ payroll.get_payment_status_display }}
-                        </span>
-                      </td>
-                      <td> {# Added Actions Cell #}
-                        <div class="btn-group btn-group-sm">
-                          <a href="{% url 'payroll_detail' payroll.id %}" class="btn btn-outline-primary" title="View Details">
-                            <i class="bi bi-eye"></i>
-                          </a>
-                          <a href="{% url 'generate_payroll_pdf' payroll.id %}" class="btn btn-outline-success" title="Download PDF">
-                             <i class="bi bi-file-earmark-pdf"></i>
-                          </a>
-                        </div>
-                      </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                      <td colspan="5" class="text-center text-muted">No recent paid payrolls found.</td> {# Updated colspan #}
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-              <div class="text-end mt-3">
-                <a href="{% url 'paid_payroll_list' %}" class="btn btn-primary btn-sm">View All Paid Payrolls</a>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-md-6">
-            <div class="bg-white rounded shadow p-4">
-              <h3 class="fs-4 mb-3">Upcoming Payroll Schedule</h3>
-              <div class="table-responsive">
-                <table class="table bg-white rounded shadow-sm table-hover">
-                  <thead>
-                    <tr>
-                      <th scope="col">Employee</th>
-                      <th scope="col">Department</th>
-                      <th scope="col">Net Amount</th>
-                      <th scope="col">Status</th>
-                      <th scope="col">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for payroll in upcoming_pending_payrolls %}
-                    <tr>
-                      <td>{{ payroll.employee.first_name }} {{ payroll.employee.last_name }}</td>
-                      <td>{{ payroll.employee.get_department_display }}</td>
-                      <td>KSh {{ payroll.net_salary|floatformat:2|intcomma }}</td>
-                      <td><span class="badge bg-warning text-dark">{{ payroll.get_payment_status_display }}</span></td>
-                      <td>
-                        <div class="btn-group btn-group-sm">
-                          <a href="{% url 'payroll_detail' payroll.id %}" class="btn btn-outline-primary" title="View Details">
-                            <i class="bi bi-eye"></i>
-                          </a>
-                          <a href="{% url 'generate_payroll_pdf' payroll.id %}" class="btn btn-outline-success" title="Download PDF">
-                             <i class="bi bi-file-earmark-pdf"></i>
-                          </a>
-                        </div>
-                      </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                      <td colspan="5" class="text-center text-muted">No upcoming payrolls found.</td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-              <div class="text-end mt-3">
-                <a href="{% url 'pending_payroll_list' %}" class="btn btn-primary btn-sm">View All Upcoming Payrolls</a>
-              </div>
-            </div>
-          </div>
+    <!-- Probation Employees Card -->
+    <div class="col-md-3 col-sm-6">
+      <div class="p-3 bg-white shadow-sm d-flex justify-content-around align-items-center rounded dashboard-card">
+        <div>
+          <h3 class="fs-2">{{ probation_employees }}</h3>
+          <p class="fs-5">On Probation</p>
         </div>
-
-        <div class="row my-5">
-          <div class="col-md-7">
-            <div class="bg-white rounded shadow p-4">
-              <h3 class="fs-4 mb-3">Payroll Distribution</h3>
-              <div class="chart-container" style="position: relative; height:300px;">
-                <canvas id="payrollChart"></canvas>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-5">
-            <div class="bg-white rounded shadow p-4">
-              <h3 class="fs-4 mb-3">Department Breakdown</h3>
-              <div class="chart-container" style="position: relative; height:300px;">
-                <canvas id="departmentChart"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- <div class="row my-5">
-          <div class="col-12">
-            <div class="bg-white rounded shadow p-4">
-              <div class="d-flex justify-content-between align-items-center mb-4">
-                <h3 class="fs-4 mb-0">Employee Quick Actions</h3>
-                <div class="d-flex gap-2">
-                  <div class="input-group">
-                    <input type="text" class="form-control" placeholder="Search employee...">
-                    <button class="btn btn-primary" type="button">
-                      <i class="bi bi-search"></i>
-                    </button>
-                  </div>
-                  <button class="btn btn-success">
-                    <i class="bi bi-person-plus-fill me-2"></i>Add Employee
-                  </button>
-                </div>
-              </div>
-              <div class="table-responsive">
-                <table class="table bg-white rounded shadow-sm table-hover">
-                  <thead>
-                    <tr>
-                      <th scope="col">Employee ID</th>
-                      <th scope="col">Name</th>
-                      <th scope="col">Position</th>
-                      <th scope="col">Department</th>
-                      <th scope="col">Salary</th>
-                      <th scope="col">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>EMP-001</td>
-                      <td>John Smith</td>
-                      <td>Senior Developer</td>
-                      <td>Engineering</td>
-                      <td>$85,000</td>
-                      <td>
-                        <div class="btn-group btn-group-sm" role="group">
-                          <button type="button" class="btn btn-outline-primary" title="View Details">
-                            <i class="bi bi-eye"></i>
-                          </button>
-                          <button type="button" class="btn btn-outline-warning" title="Edit">
-                            <i class="bi bi-pencil"></i>
-                          </button>
-                          <button type="button" class="btn btn-outline-danger" title="Delete">
-                            <i class="bi bi-trash"></i>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div> -->
-
-        <!-- <div class="row my-5">
-          <div class="col-md-6">
-            <div class="bg-white rounded shadow p-4">
-              <h3 class="fs-4 mb-3">Department Breakdown</h3>
-            </div>
-          </div>
-        </div> -->
+        <i class="bi bi-person-exclamation fs-1 text-info border rounded-full bg-info-light p-3"></i>
       </div>
     </div>
   </div>
 
-  <!-- Bootstrap JS -->
-  <!-- Add Chart.js before other scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
-  <!-- Initialize charts -->
-  <script>
-  // Payroll Distribution Chart
-  const payrollCtx = document.getElementById('payrollChart').getContext('2d');
-  new Chart(payrollCtx, {
-  type: 'bar',
-  data: {
-  labels: {{ departments|safe }},
-  datasets: [{
-  label: 'Total Payroll by Department',
-  data: {{ payroll_by_department|safe }},
-  backgroundColor: [
-  'rgba(75, 192, 192, 0.2)',
-  'rgba(54, 162, 235, 0.2)',
-  'rgba(153, 102, 255, 0.2)',
-  'rgba(255, 159, 64, 0.2)',
-  'rgba(255, 99, 132, 0.2)',
-  ],
-  borderColor: [
-  'rgba(75, 192, 192, 1)',
-  'rgba(54, 162, 235, 1)',
-  'rgba(153, 102, 255, 1)',
-  'rgba(255, 159, 64, 1)',
-  'rgba(255, 99, 132, 1)',
-  ],
-  borderWidth: 1
-  }]
-  },
-  options: {
-  responsive: true,
-  maintainAspectRatio: false,
-  scales: {
-  y: {
-  beginAtZero: true,
-  ticks: {
-  callback: function(value) {
-  return 'KSh ' + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  }
-  }
-  }
-  }
-  }
+  <div class="row my-4">
+    <div class="col-md-6">
+      <div class="bg-white rounded shadow p-4 mb-4">
+        <h3 class="fs-4 mb-3">Recent Payments</h3>
+        <div class="table-responsive-card">
+          <table class="table bg-white rounded shadow-sm table-hover">
+            <thead>
+              <tr>
+                <th scope="col">Employee</th>
+                <th scope="col">Department</th>
+                <th scope="col">Net Amount</th>
+                <th scope="col">Status</th>
+                <th scope="col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for payroll in recent_payrolls %}
+              <tr>
+                <td data-label="Employee">{{ payroll.employee.first_name }} {{ payroll.employee.last_name }}</td>
+                <td data-label="Department">{{ payroll.employee.get_department_display }}</td>
+                <td data-label="Net Amount">KSh {{ payroll.net_salary|floatformat:2|intcomma }}</td>
+                <td data-label="Status">
+                  <span class="badge bg-success">
+                    {{ payroll.get_payment_status_display }}
+                  </span>
+                </td>
+                <td data-label="Actions">
+                  <div class="btn-group btn-group-sm">
+                    <a href="{% url 'payroll_detail' payroll.id %}" class="btn btn-outline-primary" title="View Details">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                    <a href="{% url 'generate_payroll_pdf' payroll.id %}" class="btn btn-outline-success" title="Download PDF">
+                      <i class="bi bi-file-earmark-pdf"></i>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="text-center text-muted">No recent paid payrolls found.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="text-end mt-3">
+          <a href="{% url 'paid_payroll_list' %}" class="btn btn-primary btn-sm">View All Paid Payrolls</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="bg-white rounded shadow p-4 mb-4">
+        <h3 class="fs-4 mb-3">Upcoming Payroll Schedule</h3>
+        <div class="table-responsive-card">
+          <table class="table bg-white rounded shadow-sm table-hover">
+            <thead>
+              <tr>
+                <th scope="col">Employee</th>
+                <th scope="col">Department</th>
+                <th scope="col">Net Amount</th>
+                <th scope="col">Status</th>
+                <th scope="col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for payroll in upcoming_pending_payrolls %}
+              <tr>
+                <td data-label="Employee">{{ payroll.employee.first_name }} {{ payroll.employee.last_name }}</td>
+                <td data-label="Department">{{ payroll.employee.get_department_display }}</td>
+                <td data-label="Net Amount">KSh {{ payroll.net_salary|floatformat:2|intcomma }}</td>
+                <td data-label="Status"><span class="badge bg-warning text-dark">{{ payroll.get_payment_status_display }}</span></td>
+                <td data-label="Actions">
+                  <div class="btn-group btn-group-sm">
+                    <a href="{% url 'payroll_detail' payroll.id %}" class="btn btn-outline-primary" title="View Details">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                    <a href="{% url 'generate_payroll_pdf' payroll.id %}" class="btn btn-outline-success" title="Download PDF">
+                      <i class="bi bi-file-earmark-pdf"></i>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="text-center text-muted">No upcoming payrolls scheduled.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="text-end mt-3">
+          <a href="{% url 'pending_payroll_list' %}" class="btn btn-primary btn-sm">View All Pending Payrolls</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row my-4">
+    <div class="col-md-6">
+      <div class="bg-white rounded shadow p-4 mb-4">
+        <h3 class="fs-4 mb-3">Payroll by Department</h3>
+        <div class="chart-container">
+          <canvas id="departmentPayrollChart"></canvas>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-6">
+      <div class="bg-white rounded shadow p-4 mb-4">
+        <h3 class="fs-4 mb-3">Employee Distribution</h3>
+        <div class="chart-container">
+          <canvas id="employeeDistributionChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Chart data from Django context
+    const departments = {{ departments|safe }};
+    const payrollByDepartment = {{ payroll_by_department|safe }};
+    const employeesByDepartment = {{ employees_by_department|safe }};
+    
+    // Set legend position based on screen size
+    const legendPosition = window.innerWidth < 768 ? 'bottom' : 'right';
+    
+    // Payroll by Department Chart
+    const payrollCtx = document.getElementById('departmentPayrollChart').getContext('2d');
+    new Chart(payrollCtx, {
+      type: 'bar',
+      data: {
+        labels: departments,
+        datasets: [{
+          label: 'Total Payroll',
+          data: payrollByDepartment,
+          backgroundColor: 'rgba(78, 115, 223, 0.8)',
+          borderColor: 'rgba(78, 115, 223, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return 'KSh ' + value.toLocaleString();
+              }
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
+      }
+    });
+    
+    // Employee Distribution Chart
+    const employeeCtx = document.getElementById('employeeDistributionChart').getContext('2d');
+    new Chart(employeeCtx, {
+      type: 'pie',
+      data: {
+        labels: departments,
+        datasets: [{
+          data: employeesByDepartment,
+          backgroundColor: [
+            'rgba(78, 115, 223, 0.8)',
+            'rgba(28, 200, 138, 0.8)',
+            'rgba(246, 194, 62, 0.8)',
+            'rgba(54, 185, 204, 0.8)',
+            'rgba(231, 74, 59, 0.8)',
+            'rgba(133, 135, 150, 0.8)'
+          ],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: legendPosition,
+            labels: {
+              boxWidth: 12
+            }
+          }
+        }
+      }
+    });
+    
+    // Handle window resize
+    window.addEventListener('resize', function() {
+      // Redraw charts on window resize for better responsiveness
+      if (window.innerWidth < 768) {
+        document.querySelectorAll('.chart-container').forEach(function(container) {
+          container.style.height = '300px';
+        });
+      } else {
+        document.querySelectorAll('.chart-container').forEach(function(container) {
+          container.style.height = '350px';
+        });
+      }
+    });
   });
-  
-  // Department Breakdown Chart
-  const deptCtx = document.getElementById('departmentChart').getContext('2d');
-  new Chart(deptCtx, {
-  type: 'doughnut',
-  data: {
-  labels: {{ departments|safe }},
-  datasets: [{
-  data: {{ employees_by_department|safe }},
-  backgroundColor: [
-  'rgba(75, 192, 192, 0.2)',
-  'rgba(54, 162, 235, 0.2)',
-  'rgba(153, 102, 255, 0.2)',
-  'rgba(255, 159, 64, 0.2)',
-  'rgba(255, 99, 132, 0.2)',
-  ],
-  borderColor: [
-  'rgba(75, 192, 192, 1)',
-  'rgba(54, 162, 235, 1)',
-  'rgba(153, 102, 255, 1)',
-  'rgba(255, 159, 64, 1)',
-  'rgba(255, 99, 132, 1)',
-  ],
-  borderWidth: 1
-  }]
-  },
-  options: {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-  legend: {
-  position: 'bottom'
-  }
-  }
-  }
-  });
-  </script>
-  
-  <!-- Bootstrap JS and other scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="{% static 'js/main.js' %}"></script>
-</body>
-</html>
+</script>
+{% endblock %}

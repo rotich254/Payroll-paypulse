@@ -1,0 +1,278 @@
+/* Responsive CSS for PayPulse System */
+
+/* Base mobile-first styles */
+.sidebar {
+    transition: all 0.3s ease;
+}
+
+#page-content-wrapper {
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+/* Small devices (phones, less than 576px) */
+@media (max-width: 575.98px) {
+    /* Hide sidebar by default on small screens */
+    #sidebar-wrapper {
+        margin-left: -250px;
+        position: fixed;
+        z-index: 1000;
+        height: 100%;
+    }
+    
+    /* When toggled, show sidebar */
+    #wrapper.toggled #sidebar-wrapper {
+        margin-left: 0;
+    }
+    
+    /* Adjust content area when sidebar is hidden */
+    #page-content-wrapper {
+        padding-left: 0;
+    }
+    
+    /* Full width tables with horizontal scroll */
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    /* Adjust card layouts */
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    /* Make form elements full width */
+    .form-control, .form-select, .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Stack form buttons */
+    .form-group .btn {
+        display: block;
+        width: 100%;
+        margin-right: 0;
+    }
+    
+    /* Adjust modal dialogs */
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+    
+    /* Adjust navbar elements */
+    .navbar .dropdown-menu {
+        position: fixed;
+        top: auto;
+        right: 0;
+        width: 100%;
+        margin-top: 0;
+    }
+    
+    /* Make dashboard cards full width */
+    .dashboard-card {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+    
+    /* Adjust chart containers */
+    .chart-container {
+        height: 300px !important;
+    }
+}
+
+/* Medium devices (tablets, 576px to 767px) */
+@media (min-width: 576px) and (max-width: 767.98px) {
+    /* Sidebar behavior on medium screens */
+    #sidebar-wrapper {
+        margin-left: -250px;
+        position: fixed;
+        z-index: 1000;
+        height: 100%;
+    }
+    
+    #wrapper.toggled #sidebar-wrapper {
+        margin-left: 0;
+    }
+    
+    /* Adjust content area */
+    #page-content-wrapper {
+        padding-left: 0;
+    }
+    
+    /* Two column card layout */
+    .dashboard-stats .col-md-3 {
+        width: 50%;
+    }
+    
+    /* Adjust chart containers */
+    .chart-container {
+        height: 350px !important;
+    }
+}
+
+/* Large devices (desktops, 768px and up) */
+@media (min-width: 768px) {
+    /* Sidebar is visible by default */
+    #sidebar-wrapper {
+        margin-left: 0;
+    }
+    
+    /* When toggled, hide sidebar */
+    #wrapper.toggled #sidebar-wrapper {
+        margin-left: -250px;
+    }
+    
+    /* Adjust content area when sidebar is visible */
+    #page-content-wrapper {
+        min-width: 0;
+        width: 100%;
+    }
+    
+    /* Adjust content area when sidebar is hidden */
+    #wrapper.toggled #page-content-wrapper {
+        margin-left: 0;
+    }
+    
+    /* Restore form layout */
+    .form-group .btn {
+        display: inline-block;
+        width: auto;
+    }
+}
+
+/* Extra large devices (large desktops, 1200px and up) */
+@media (min-width: 1200px) {
+    /* Further refinements for very large screens */
+    .container-fluid {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+    
+    /* Larger charts on big screens */
+    .chart-container {
+        height: 450px !important;
+    }
+}
+
+/* Print styles */
+@media print {
+    #sidebar-wrapper {
+        display: none;
+    }
+    
+    #page-content-wrapper {
+        margin-left: 0;
+        padding-left: 0;
+    }
+    
+    .no-print {
+        display: none;
+    }
+    
+    .card {
+        break-inside: avoid;
+    }
+    
+    body {
+        background-color: white;
+    }
+}
+
+/* Utility classes for responsive design */
+.d-xs-none {
+    display: none !important;
+}
+
+@media (min-width: 576px) {
+    .d-xs-none {
+        display: block !important;
+    }
+}
+
+/* Fix for select2 dropdowns on mobile */
+.select2-container {
+    width: 100% !important;
+}
+
+/* Fix for datepickers on mobile */
+.datepicker-dropdown {
+    max-width: 300px;
+}
+
+/* Responsive tables */
+.table-responsive-card {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+}
+
+@media (max-width: 767.98px) {
+    /* Convert tables to cards on mobile */
+    .table-responsive-card table,
+    .table-responsive-card thead,
+    .table-responsive-card tbody,
+    .table-responsive-card th,
+    .table-responsive-card td,
+    .table-responsive-card tr {
+        display: block;
+    }
+    
+    .table-responsive-card thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+    
+    .table-responsive-card tr {
+        margin-bottom: 1rem;
+        border: 1px solid #e3e6f0;
+        border-radius: 0.35rem;
+    }
+    
+    .table-responsive-card td {
+        position: relative;
+        padding-left: 50% !important;
+        text-align: right;
+        border-bottom: 1px solid #e3e6f0;
+    }
+    
+    .table-responsive-card td:last-child {
+        border-bottom: none;
+    }
+    
+    .table-responsive-card td:before {
+        position: absolute;
+        left: 0.75rem;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        text-align: left;
+        font-weight: bold;
+        content: attr(data-label);
+    }
+}
+
+/* Responsive sidebar toggle button */
+.sidebar-toggle {
+    display: block;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+/* Responsive navigation for mobile */
+.mobile-nav-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+#wrapper.toggled .mobile-nav-overlay {
+    display: block;
+} 
