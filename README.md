@@ -21,7 +21,7 @@ A comprehensive payroll management system built with Django.
    - **Region**: Choose the closest to your users
    - **Branch**: main (or your default branch)
    - **Build Command**: `./build.sh`
-   - **Start Command**: `gunicorn pappulse.wsgi:application`
+   - **Start Command**: `gunicorn wsgi:app`
    - **Plan**: Free
 
 5. Add the following environment variables:

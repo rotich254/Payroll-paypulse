@@ -1,1 +1,1 @@
-web: gunicorn pappulse.wsgi:application 
+web: gunicorn wsgi:app 
