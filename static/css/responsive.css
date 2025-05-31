@@ -275,4 +275,25 @@
 
 #wrapper.toggled .mobile-nav-overlay {
     display: block;
+}
+
+/* Sidebar styling enhancements */
+.sidebar .list-group-item {
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.sidebar .list-group-item.active {
+    border-left: 3px solid #fff;
+    position: relative;
+}
+
+.sidebar .list-group-item.active::before {
+    content: "";
+    position: absolute;
+    left: -3px;
+    top: 0;
+    height: 100%;
+    width: 3px;
+    background-color: #fff;
 } 
