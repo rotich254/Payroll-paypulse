@@ -205,6 +205,7 @@ class Report(models.Model):
     department = models.CharField(max_length=20, choices=Employee.DEPARTMENT_CHOICES, null=True, blank=True)
     file = models.FileField(upload_to='reports/')
     status = models.CharField(max_length=20, choices=REPORT_STATUS, default='processing')
+    generated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     
     def __str__(self):
         return f"{self.name} - {self.generated_date.strftime('%Y-%m-%d')}"

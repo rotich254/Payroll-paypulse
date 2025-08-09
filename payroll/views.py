@@ -697,9 +697,69 @@ def delete_report(request, report_id):
     
     return redirect('reports')
 
+from .excel_reports import (
+    generate_payroll_excel,
+    generate_tax_excel,
+    generate_employee_excel,
+    generate_department_excel,
+)
+
 @login_required
 def generate_report(request):
-    # Your view logic here
+    """
+    Handles report generation requests and calls the appropriate
+    Excel generation function based on the selected report type.
+    """
+    if request.method == 'POST':
+        report_type = request.POST.get('report_type')
+        start_date_str = request.POST.get('start_date')
+        end_date_str = request.POST.get('end_date')
+        report_format = request.POST.get('report_format', 'excel')
+
+        # --- Basic Input Validation ---
+        if not all([report_type, start_date_str, end_date_str]):
+            messages.error(request, "Missing required fields: report type, start date, or end date.")
+            return redirect('reports')
+
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            messages.error(request, "Invalid date format. Please use YYYY-MM-DD.")
+            return redirect('reports')
+
+        if start_date > end_date:
+            messages.error(request, "Start date cannot be after end date.")
+            return redirect('reports')
+
+        # --- Report Generation Logic ---
+        try:
+            if report_format == 'excel':
+                # Map report types to their generation functions
+                report_functions = {
+                    'payroll': generate_payroll_excel,
+                    'tax': generate_tax_excel,
+                    'employee': generate_employee_excel,
+                    'department': generate_department_excel,
+                }
+
+                # Get the appropriate function
+                generation_function = report_functions.get(report_type)
+
+                if generation_function:
+                    # Call the function, which now returns an HttpResponse for download
+                    response = generation_function(request, start_date, end_date)
+                    if response:
+                        return response
+                else:
+                    messages.error(request, f"Invalid report type: '{report_type}'.")
+            else:
+                messages.error(request, f"Unsupported format: '{report_format}'. Only Excel is supported.")
+
+        except Exception as e:
+            logging.error(f"Error generating report: {e}", exc_info=True)
+            messages.error(request, f"An unexpected error occurred: {str(e)}")
+
     return redirect('reports')
 
 @login_required

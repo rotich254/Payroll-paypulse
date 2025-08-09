@@ -22,14 +22,13 @@
 <!-- Reports Section -->
 <div class="container-fluid">
     <div class="row">
-        <!-- Report Generation Form -->
-        <div class="col-md-4 mb-4">
+        <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title mb-4">Generate Report</h5>
-                    <form method="post" action="{% url 'generate_report' %}">
+                    <form method="post" action="{% url 'generate_report' %}" class="row g-3 align-items-end">
                         {% csrf_token %}
-                        <div class="mb-3">
+                        <div class="col-md-3">
                             <label for="report_type" class="form-label">Report Type</label>
                             <select class="form-select" id="report_type" name="report_type" required>
                                 <option value="">Select Report Type</option>
@@ -39,26 +38,22 @@
                                 <option value="department">Department Summary</option>
                             </select>
                         </div>
-                        <div class="mb-3">
+                        <div class="col-md-3">
                             <label for="start_date" class="form-label">Start Date</label>
                             <input type="date" class="form-control" id="start_date" name="start_date" required>
                         </div>
-                        <div class="mb-3">
+                        <div class="col-md-3">
                             <label for="end_date" class="form-label">End Date</label>
                             <input type="date" class="form-control" id="end_date" name="end_date" required>
                         </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary w-100">Generate Report</button>
+                        </div>
                         <input type="hidden" name="report_format" value="excel">
-
-                        <button type="submit" class="btn btn-primary w-100">Generate Report</button>
                     </form>
-                </div>
-            </div>
-        </div>
 
-        <!-- Generated Reports List -->
-        <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-body">
+                    <hr class="my-4">
+
                     <h5 class="card-title mb-4">Generated Reports</h5>
                     <div class="table-responsive">
                         <table class="table table-hover">
