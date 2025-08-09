@@ -1,5 +1,3 @@
-
-{% extends 'base.html'%}
 {% load static %}
 {% block content %}
 <div class="container-fluid px-4">
@@ -14,13 +12,6 @@
                             <label for="employee" class="form-label">Employee</label>
                             <select class="form-select select2" id="employee" name="employee" required>
                                 <option value="">Select employee...</option>
-                                {% for employee in active_employees %}
-                                    <option value="{{ employee.id }}" 
-                                        data-salary="{{ employee.salary }}"
-                                        data-department="{{ employee.department }}">
-                                        {{ employee.first_name }} {{ employee.last_name }}
-                                    </option>
-                                {% endfor %}
                             </select>
                         </div>
 
@@ -31,7 +22,15 @@
 
                         <div class="col-md-4">
                             <label for="gross_salary" class="form-label">Gross Salary</label>
-                            <input type="number" class="form-control" id="gross_salary" readonly>
+                            <div class="input-group">
+                                <span class="input-group-text">KES</span>
+                                <input type="text" 
+                                       class="form-control text-end fw-bold" 
+                                       id="gross_salary" 
+                                       name="gross_salary"
+                                       readonly
+                                       style="background-color: #f8f9fa;">
+                            </div>
                         </div>
 
                         <div class="col-md-4">
@@ -46,7 +45,7 @@
 
                         <div class="col-md-4">
                             <label for="net_salary" class="form-label">Net Salary</label>
-                            <input type="number" class="form-control" id="net_salary" readonly>
+                            <input type="number" class="form-control" id="net_salary" name="net_salary" readonly>
                         </div>
 
                         <div class="col-12">
@@ -65,76 +64,4 @@
         <!-- Preview content will be inserted here -->
     </div>
 </div>
-
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('payrollForm');
-    const employeeSelect = document.getElementById('employee');
-    const grossSalaryInput = document.getElementById('gross_salary');
-    const allowancesInput = document.getElementById('total_allowances');
-    const deductionsInput = document.getElementById('total_deductions');
-    const netSalaryInput = document.getElementById('net_salary');
-    const previewDiv = document.getElementById('payrollPreview');
-
-    // Calculate net salary
-    function calculateNetSalary() {
-        const grossSalary = parseFloat(grossSalaryInput.value) || 0;
-        const allowances = parseFloat(allowancesInput.value) || 0;
-        const deductions = parseFloat(deductionsInput.value) || 0;
-        const netSalary = grossSalary + allowances - deductions;
-        netSalaryInput.value = netSalary.toFixed(2);
-    }
-
-    // Handle employee selection
-    employeeSelect.addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
-        if (selectedOption.value) {
-            const salary = selectedOption.getAttribute('data-salary');
-            grossSalaryInput.value = parseFloat(salary).toFixed(2);
-            calculateNetSalary();
-        } else {
-            grossSalaryInput.value = '';
-            netSalaryInput.value = '';
-        }
-    });
-
-    // Recalculate on input changes
-    allowancesInput.addEventListener('input', calculateNetSalary);
-    deductionsInput.addEventListener('input', calculateNetSalary);
-
-    // Handle form submission
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(this);
-        
-        fetch('{% url "generate_payroll" %}', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                // Show success message
-                alert(data.message);
-                
-                // Redirect to payroll detail page
-                window.location.href = data.data.detail_url;
-            } else {
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while generating payroll');
-        });
-    });
-});
-</script>
 {% endblock %}

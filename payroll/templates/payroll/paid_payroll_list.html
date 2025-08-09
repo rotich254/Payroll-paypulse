@@ -4,22 +4,22 @@
 
 {% block title %}{{ title }}{% endblock %}
 
-{% block content %}
-<div id="page-content-wrapper">
-  <nav class="navbar navbar-expand-lg navbar-light bg-transparent py-4 px-4">
-    <div class="d-flex align-items-center">
-      <i class="bi bi-list fs-2 me-3" id="menu-toggle"></i>
-      <h2 class="fs-2 m-0">{{ title }}</h2>
-    </div>
-    <!-- Navbar content (user dropdown, etc.) can be included here if needed -->
-  </nav>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'payroll/css/payroll_list.css' %}">
+{% endblock %}
 
-  <div class="container-fluid px-4">
+{% block page_title %}
+{{ title }}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
     <div class="row my-5">
       <div class="col-12">
-        <div class="card border-0 shadow">
-          <div class="card-header">
+        <div class="card animate-fade-in">
+          <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">{{ title }}</h5>
+            <span class="badge bg-success">Paid Records</span>
           </div>
           <div class="card-body">
             <div class="table-responsive">
@@ -38,12 +38,12 @@
                 <tbody>
                   {% for payroll in paid_payrolls %}
                   <tr>
-                    <td>{{ payroll.reference_id }}</td>
+                    <td><span class="fw-bold text-primary">{{ payroll.reference_id }}</span></td>
                     <td>{{ payroll.employee.first_name }} {{ payroll.employee.last_name }}</td>
-                    <td>{{ payroll.employee.get_department_display }}</td>
+                    <td><span class="badge bg-info text-white">{{ payroll.employee.get_department_display }}</span></td>
                     <td>{{ payroll.pay_period|date:"F Y" }}</td>
-                    <td>{{ payroll.payment_date|date:"F j, Y" }}</td>
-                    <td>KSh {{ payroll.net_salary|floatformat:2|intcomma }}</td>
+                    <td><span class="badge bg-success">{{ payroll.payment_date|date:"F j, Y" }}</span></td>
+                    <td class="fw-bold">KSh {{ payroll.net_salary|floatformat:2|intcomma }}</td>
                     <td>
                       <div class="btn-group">
                         <a href="{% url 'payroll_detail' payroll.id %}" class="btn btn-sm btn-outline-primary" title="View Details">
@@ -57,9 +57,9 @@
                   </tr>
                   {% empty %}
                   <tr>
-                    <td colspan="7" class="text-center py-4">
-                      <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
-                      <p class="text-muted mb-0">No paid payroll records found.</p>
+                    <td colspan="7" class="empty-state">
+                      <i class="bi bi-inbox d-block mb-2"></i>
+                      <p class="mb-0">No paid payroll records found.</p>
                     </td>
                   </tr>
                   {% endfor %}
@@ -67,50 +67,52 @@
               </table>
             </div>
 
-            <!-- Pagination -->
-            {% if paid_payrolls.has_other_pages %}
-            <nav aria-label="Page navigation">
-              <ul class="pagination justify-content-center mt-4">
-                {% if paid_payrolls.has_previous %}
-                  <li class="page-item">
-                    <a class="page-link" href="?page={{ paid_payrolls.previous_page_number }}" aria-label="Previous">
-                      <span aria-hidden="true">&laquo;</span>
-                    </a>
-                  </li>
-                {% else %}
-                  <li class="page-item disabled">
-                    <span class="page-link" aria-hidden="true">&laquo;</span>
-                  </li>
-                {% endif %}
+                    <!-- Pagination -->
+                    {% if paid_payrolls.has_other_pages %}
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center mt-4">
+                            {% if paid_payrolls.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ paid_payrolls.previous_page_number }}"
+                                    aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link" aria-hidden="true">&laquo;</span>
+                            </li>
+                            {% endif %}
 
-                {% for i in paid_payrolls.paginator.page_range %}
-                  {% if paid_payrolls.number == i %}
-                    <li class="page-item active" aria-current="page"><span class="page-link">{{ i }}</span></li>
-                  {% else %}
-                    <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
-                  {% endif %}
-                {% endfor %}
+                            {% for i in paid_payrolls.paginator.page_range %}
+                            {% if paid_payrolls.number == i %}
+                            <li class="page-item active" aria-current="page"><span class="page-link">{{ i }}</span>
+                            </li>
+                            {% else %}
+                            <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                            {% endif %}
+                            {% endfor %}
 
-                {% if paid_payrolls.has_next %}
-                  <li class="page-item">
-                    <a class="page-link" href="?page={{ paid_payrolls.next_page_number }}" aria-label="Next">
-                      <span aria-hidden="true">&raquo;</span>
-                    </a>
-                  </li>
-                {% else %}
-                  <li class="page-item disabled">
-                    <span class="page-link" aria-hidden="true">&raquo;</span>
-                  </li>
-                {% endif %}
-              </ul>
-            </nav>
-            {% endif %}
-            <!-- End Pagination -->
+                            {% if paid_payrolls.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ paid_payrolls.next_page_number }}"
+                                    aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link" aria-hidden="true">&raquo;</span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    <!-- End Pagination -->
 
-          </div>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 </div>
 {% endblock %}

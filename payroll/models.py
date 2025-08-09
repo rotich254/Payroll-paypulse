@@ -10,6 +10,13 @@ from django.dispatch import receiver
 def default_avatar_path():
     return 'avatars/default_avatar.png' # Make sure this default image exists in your media/avatars/ directory
 
+class Company(models.Model):
+    name = models.CharField(max_length=255)
+    logo = models.ImageField(upload_to='logos/', null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     avatar = models.ImageField(default=default_avatar_path, upload_to='avatars/')

@@ -83,14 +83,22 @@ import dj_database_url
 # Get the DATABASE_URL from environment variable
 DATABASE_URL = os.getenv('DATABASE_URL')
 
-# If DATABASE_URL is available, use it with dj_database_url
-DATABASES = {
-    'default': dj_database_url.config(
-        default=DATABASE_URL,
-        conn_max_age=600,
-        ssl_require=True
-    )
-}
+if DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+else:
+    # If DATABASE_URL is available, use it with dj_database_url
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=True
+        )
+    }
 
 
 # Password validation

@@ -1,0 +1,46 @@
+{% for employee in employees %}
+<tr>
+  <td>
+    <div class="d-flex align-items-center">
+      {% if employee.profile_image %}
+      <img src="{{ employee.profile_image.url }}" alt="{{ employee.full_name }}" class="avatar me-3">
+      {% else %}
+      <div class="avatar me-3 bg-primary-light d-flex align-items-center justify-content-center">
+        <i class="bi bi-person text-primary"></i>
+      </div>
+      {% endif %}
+      <div>
+        <h6 class="mb-0">{{ employee.first_name }} {{ employee.last_name }}</h6>
+        <small class="text-muted">{{ employee.email }}</small>
+      </div>
+    </div>
+  </td>
+  <td>
+    <span class="status-badge {% if employee.is_active == 'active' %}status-active{% else %}status-inactive{% endif %}">
+      {{ employee.get_is_active_display }}
+    </span>
+  </td>
+  <td>KSh {{ employee.salary|floatformat:2 }}</td>
+  <td>{{ employee.hire_date|date:"M d, Y" }}</td>
+  <td>
+    <div class="btn-group">
+      <a href="{% url 'edit_employee' employee.id %}" class="btn btn-sm btn-outline-primary">
+        <i class="bi bi-pencil"></i>
+      </a>
+      <button type="button" class="btn btn-sm btn-outline-danger" 
+              onclick="confirmDelete('{{ employee.id }}', '{{ employee.first_name }} {{ employee.last_name }}')">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>
+  </td>
+</tr>
+{% empty %}
+<tr>
+  <td colspan="5" class="text-center py-4">
+    <div class="text-muted">
+      <i class="bi bi-people fs-1 d-block mb-3"></i>
+      <p>No employees found matching your search criteria.</p>
+    </div>
+  </td>
+</tr>
+{% endfor %}

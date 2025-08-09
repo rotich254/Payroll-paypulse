@@ -1,37 +1,37 @@
-    
+{% load company_tags %}
 <div class="bg-primary-dark" id="sidebar-wrapper">
       <div class="sidebar-heading text-center py-4 fs-4 fw-bold text-white">
-        <i class="bi bi-cash-coin me-2"></i>PayPulse
+        <i class="bi bi-cash-coin me-2"></i><span class="sidebar-label">{% get_company_name %}</span>
       </div>
       <div class="list-group list-group-flush my-3">
         <a href="{% url 'index'%}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
-          <i class="bi bi-speedometer2 me-2"></i>Dashboard
+          <i class="bi bi-speedometer2 me-2"></i><span class="sidebar-label">Dashboard</span>
         </a>
         <a href="{% url 'employee_list'%}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold {% if request.resolver_match.url_name == 'employee_list' %}active{% endif %}">
-          <i class="bi bi-people me-2"></i>Employees
+          <i class="bi bi-people me-2"></i><span class="sidebar-label">Employees</span>
         </a>
         <a href="{% url 'payroll'%}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold {% if request.resolver_match.url_name == 'payroll' %}active{% endif %}">
-          <i class="bi bi-currency-dollar me-2"></i>Payroll
+          <i class="bi bi-currency-dollar me-2"></i><span class="sidebar-label">Payroll</span>
         </a>
         <a href="#" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
-          <i class="bi bi-calendar-event me-2"></i>Attendance
+          <i class="bi bi-calendar-event me-2"></i><span class="sidebar-label">Attendance</span>
         </a>
         <a href="{% url 'reports' %}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold {% if request.resolver_match.url_name == 'reports' %}active{% endif %}">
-          <i class="bi bi-card-checklist me-2"></i>Reports
+          <i class="bi bi-card-checklist me-2"></i><span class="sidebar-label">Reports</span>
         </a>
-        <a href="#" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
-          <i class="bi bi-gear me-2"></i>Settings
+        <a href="{% url 'company_settings' %}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold {% if request.resolver_match.url_name == 'company_settings' %}active{% endif %}">
+          <i class="bi bi-gear me-2"></i><span class="sidebar-label">Settings</span>
         </a>
         {% if user.is_authenticated %}
-        <form method="post" action="{% url 'logout' %}" style="margin:0;">
+        <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="list-group-item list-group-item-action bg-transparent text-danger fw-bold border-0 w-100 text-start">
+          <i class="bi bi-box-arrow-left me-2"></i><span class="sidebar-label">Logout</span>
+        </a>
+        <form id="logout-form" method="post" action="{% url 'logout' %}" style="display:none;">
           {% csrf_token %}
-          <button type="submit" class="list-group-item list-group-item-action bg-transparent text-danger fw-bold border-0 w-100 text-start">
-            <i class="bi bi-box-arrow-left me-2"></i>Logout
-          </button>
         </form>
         {% else %}
         <a href="{% url 'login' %}" class="list-group-item list-group-item-action bg-transparent second-text fw-bold">
-          <i class="bi bi-box-arrow-in-right me-2"></i>Login
+          <i class="bi bi-box-arrow-in-right me-2"></i><span class="sidebar-label">Login</span>
         </a>
         {% endif %}
       </div>

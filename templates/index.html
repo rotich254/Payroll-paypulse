@@ -4,6 +4,8 @@
 
 {% block title %}Dashboard - PayPulse{% endblock %}
 
+{% block page_title %}Dashboard{% endblock %}
+
 {% block extra_css %}
 <style>
   .dashboard-card {
@@ -27,170 +29,166 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4">
-  <h2 class="fs-2 mb-4">Dashboard</h2>
+<!-- Dashboard Stats -->
+<div class="row g-3 my-2 dashboard-stats">
+  <!-- Total Employees Card -->
+  <div class="col-md-3 col-sm-6">
+    <div class="p-3 bg-white shadow-sm d-flex justify-content-around align-items-center rounded dashboard-card">
+      <div>
+        <h3 class="fs-2">{{ total_employees }}</h3>
+        <p class="fs-5">Total Employees</p>
+      </div>
+      <i class="bi bi-people fs-1 primary-text border rounded-full bg-primary-light p-3"></i>
+    </div>
+  </div>
+
+  <!-- Active Employees Card -->
+  <div class="col-md-3 col-sm-6">
+    <div class="p-3 bg-white shadow-sm d-flex justify-content-around align-items-center rounded dashboard-card">
+      <div>
+        <h3 class="fs-2">{{ active_employees }}</h3>
+        <p class="fs-5">Active Employees</p>
+      </div>
+      <i class="bi bi-person-check fs-1 primary-text border rounded-full bg-primary-light p-3"></i>
+    </div>
+  </div>
+
+  <!-- On Leave Employees Card -->
+  <div class="col-md-3 col-sm-6">
+    <div class="p-3 bg-white shadow-sm d-flex justify-content-around align-items-center rounded dashboard-card">
+      <div>
+        <h3 class="fs-2">{{ on_leave_employees }}</h3>
+        <p class="fs-5">On Leave</p>
+      </div>
+      <i class="bi bi-person-slash fs-1 text-warning border rounded-full bg-warning-light p-3"></i>
+    </div>
+  </div>
+
+  <!-- Probation Employees Card -->
+  <div class="col-md-3 col-sm-6">
+    <div class="p-3 bg-white shadow-sm d-flex justify-content-around align-items-center rounded dashboard-card">
+      <div>
+        <h3 class="fs-2">{{ probation_employees }}</h3>
+        <p class="fs-5">On Probation</p>
+      </div>
+      <i class="bi bi-person-exclamation fs-1 text-info border rounded-full bg-info-light p-3"></i>
+    </div>
+  </div>
+</div>
+
+<div class="row my-4">
+  <div class="col-md-6">
+    <div class="bg-white rounded shadow p-4 mb-4">
+      <h3 class="fs-4 mb-3">Recent Payments</h3>
+      <div class="table-responsive-card">
+        <table class="table bg-white rounded shadow-sm table-hover">
+          <thead>
+            <tr>
+              <th scope="col">Employee</th>
+              <th scope="col">Department</th>
+              <th scope="col">Net Amount</th>
+              <th scope="col">Status</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for payroll in recent_payrolls %}
+            <tr>
+              <td data-label="Employee">{{ payroll.employee.first_name }} {{ payroll.employee.last_name }}</td>
+              <td data-label="Department">{{ payroll.employee.get_department_display }}</td>
+              <td data-label="Net Amount">KSh {{ payroll.net_salary|floatformat:2|intcomma }}</td>
+              <td data-label="Status">
+                <span class="badge bg-success">
+                  {{ payroll.get_payment_status_display }}
+                </span>
+              </td>
+              <td data-label="Actions">
+                <div class="btn-group btn-group-sm">
+                  <a href="{% url 'payroll_detail' payroll.id %}" class="btn btn-outline-primary" title="View Details">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  <a href="{% url 'generate_payroll_pdf' payroll.id %}" class="btn btn-outline-success" title="Download PDF">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted">No recent paid payrolls found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="text-end mt-3">
+        <a href="{% url 'paid_payroll_list' %}" class="btn btn-primary btn-sm">View All Paid Payrolls</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="bg-white rounded shadow p-4 mb-4">
+      <h3 class="fs-4 mb-3">Upcoming Payroll Schedule</h3>
+      <div class="table-responsive-card">
+        <table class="table bg-white rounded shadow-sm table-hover">
+          <thead>
+            <tr>
+              <th scope="col">Employee</th>
+              <th scope="col">Department</th>
+              <th scope="col">Net Amount</th>
+              <th scope="col">Status</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for payroll in upcoming_pending_payrolls %}
+            <tr>
+              <td data-label="Employee">{{ payroll.employee.first_name }} {{ payroll.employee.last_name }}</td>
+              <td data-label="Department">{{ payroll.employee.get_department_display }}</td>
+              <td data-label="Net Amount">KSh {{ payroll.net_salary|floatformat:2|intcomma }}</td>
+              <td data-label="Status"><span class="badge bg-warning text-dark">{{ payroll.get_payment_status_display }}</span></td>
+              <td data-label="Actions">
+                <div class="btn-group btn-group-sm">
+                  <a href="{% url 'payroll_detail' payroll.id %}" class="btn btn-outline-primary" title="View Details">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  <a href="{% url 'generate_payroll_pdf' payroll.id %}" class="btn btn-outline-success" title="Download PDF">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted">No upcoming payrolls scheduled.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="text-end mt-3">
+        <a href="{% url 'pending_payroll_list' %}" class="btn btn-primary btn-sm">View All Pending Payrolls</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row my-4">
+  <div class="col-md-6">
+    <div class="bg-white rounded shadow p-4 mb-4">
+      <h3 class="fs-4 mb-3">Payroll by Department</h3>
+      <div class="chart-container">
+        <canvas id="departmentPayrollChart"></canvas>
+      </div>
+    </div>
+  </div>
   
-  <!-- Dashboard Stats -->
-  <div class="row g-3 my-2 dashboard-stats">
-    <!-- Total Employees Card -->
-    <div class="col-md-3 col-sm-6">
-      <div class="p-3 bg-white shadow-sm d-flex justify-content-around align-items-center rounded dashboard-card">
-        <div>
-          <h3 class="fs-2">{{ total_employees }}</h3>
-          <p class="fs-5">Total Employees</p>
-        </div>
-        <i class="bi bi-people fs-1 primary-text border rounded-full bg-primary-light p-3"></i>
-      </div>
-    </div>
-
-    <!-- Active Employees Card -->
-    <div class="col-md-3 col-sm-6">
-      <div class="p-3 bg-white shadow-sm d-flex justify-content-around align-items-center rounded dashboard-card">
-        <div>
-          <h3 class="fs-2">{{ active_employees }}</h3>
-          <p class="fs-5">Active Employees</p>
-        </div>
-        <i class="bi bi-person-check fs-1 text-success border rounded-full bg-success-light p-3"></i>
-      </div>
-    </div>
-
-    <!-- On Leave Employees Card -->
-    <div class="col-md-3 col-sm-6">
-      <div class="p-3 bg-white shadow-sm d-flex justify-content-around align-items-center rounded dashboard-card">
-        <div>
-          <h3 class="fs-2">{{ on_leave_employees }}</h3>
-          <p class="fs-5">On Leave</p>
-        </div>
-        <i class="bi bi-person-slash fs-1 text-warning border rounded-full bg-warning-light p-3"></i>
-      </div>
-    </div>
-
-    <!-- Probation Employees Card -->
-    <div class="col-md-3 col-sm-6">
-      <div class="p-3 bg-white shadow-sm d-flex justify-content-around align-items-center rounded dashboard-card">
-        <div>
-          <h3 class="fs-2">{{ probation_employees }}</h3>
-          <p class="fs-5">On Probation</p>
-        </div>
-        <i class="bi bi-person-exclamation fs-1 text-info border rounded-full bg-info-light p-3"></i>
-      </div>
-    </div>
-  </div>
-
-  <div class="row my-4">
-    <div class="col-md-6">
-      <div class="bg-white rounded shadow p-4 mb-4">
-        <h3 class="fs-4 mb-3">Recent Payments</h3>
-        <div class="table-responsive-card">
-          <table class="table bg-white rounded shadow-sm table-hover">
-            <thead>
-              <tr>
-                <th scope="col">Employee</th>
-                <th scope="col">Department</th>
-                <th scope="col">Net Amount</th>
-                <th scope="col">Status</th>
-                <th scope="col">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for payroll in recent_payrolls %}
-              <tr>
-                <td data-label="Employee">{{ payroll.employee.first_name }} {{ payroll.employee.last_name }}</td>
-                <td data-label="Department">{{ payroll.employee.get_department_display }}</td>
-                <td data-label="Net Amount">KSh {{ payroll.net_salary|floatformat:2|intcomma }}</td>
-                <td data-label="Status">
-                  <span class="badge bg-success">
-                    {{ payroll.get_payment_status_display }}
-                  </span>
-                </td>
-                <td data-label="Actions">
-                  <div class="btn-group btn-group-sm">
-                    <a href="{% url 'payroll_detail' payroll.id %}" class="btn btn-outline-primary" title="View Details">
-                      <i class="bi bi-eye"></i>
-                    </a>
-                    <a href="{% url 'generate_payroll_pdf' payroll.id %}" class="btn btn-outline-success" title="Download PDF">
-                      <i class="bi bi-file-earmark-pdf"></i>
-                    </a>
-                  </div>
-                </td>
-              </tr>
-              {% empty %}
-              <tr>
-                <td colspan="5" class="text-center text-muted">No recent paid payrolls found.</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        <div class="text-end mt-3">
-          <a href="{% url 'paid_payroll_list' %}" class="btn btn-primary btn-sm">View All Paid Payrolls</a>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-6">
-      <div class="bg-white rounded shadow p-4 mb-4">
-        <h3 class="fs-4 mb-3">Upcoming Payroll Schedule</h3>
-        <div class="table-responsive-card">
-          <table class="table bg-white rounded shadow-sm table-hover">
-            <thead>
-              <tr>
-                <th scope="col">Employee</th>
-                <th scope="col">Department</th>
-                <th scope="col">Net Amount</th>
-                <th scope="col">Status</th>
-                <th scope="col">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for payroll in upcoming_pending_payrolls %}
-              <tr>
-                <td data-label="Employee">{{ payroll.employee.first_name }} {{ payroll.employee.last_name }}</td>
-                <td data-label="Department">{{ payroll.employee.get_department_display }}</td>
-                <td data-label="Net Amount">KSh {{ payroll.net_salary|floatformat:2|intcomma }}</td>
-                <td data-label="Status"><span class="badge bg-warning text-dark">{{ payroll.get_payment_status_display }}</span></td>
-                <td data-label="Actions">
-                  <div class="btn-group btn-group-sm">
-                    <a href="{% url 'payroll_detail' payroll.id %}" class="btn btn-outline-primary" title="View Details">
-                      <i class="bi bi-eye"></i>
-                    </a>
-                    <a href="{% url 'generate_payroll_pdf' payroll.id %}" class="btn btn-outline-success" title="Download PDF">
-                      <i class="bi bi-file-earmark-pdf"></i>
-                    </a>
-                  </div>
-                </td>
-              </tr>
-              {% empty %}
-              <tr>
-                <td colspan="5" class="text-center text-muted">No upcoming payrolls scheduled.</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        <div class="text-end mt-3">
-          <a href="{% url 'pending_payroll_list' %}" class="btn btn-primary btn-sm">View All Pending Payrolls</a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="row my-4">
-    <div class="col-md-6">
-      <div class="bg-white rounded shadow p-4 mb-4">
-        <h3 class="fs-4 mb-3">Payroll by Department</h3>
-        <div class="chart-container">
-          <canvas id="departmentPayrollChart"></canvas>
-        </div>
-      </div>
-    </div>
-    
-    <div class="col-md-6">
-      <div class="bg-white rounded shadow p-4 mb-4">
-        <h3 class="fs-4 mb-3">Employee Distribution</h3>
-        <div class="chart-container">
-          <canvas id="employeeDistributionChart"></canvas>
-        </div>
+  <div class="col-md-6">
+    <div class="bg-white rounded shadow p-4 mb-4">
+      <h3 class="fs-4 mb-3">Employee Distribution</h3>
+      <div class="chart-container">
+        <canvas id="employeeDistributionChart"></canvas>
       </div>
     </div>
   </div>
@@ -202,7 +200,7 @@
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     // Chart data from Django context
-    const departments = {{ departments|safe }};
+    const departments = {{ chart_departments|safe }};
     const payrollByDepartment = {{ payroll_by_department|safe }};
     const employeesByDepartment = {{ employees_by_department|safe }};
     
