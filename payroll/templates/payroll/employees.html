@@ -100,11 +100,12 @@
           </select>
         </div>
         <div class="col-md-6">
-          <div class="input-group">
+          <div class="input-group position-relative">
             <span class="input-group-text bg-transparent">
               <i class="bi bi-search"></i>
             </span>
             <input type="text" class="form-control" id="searchEmployee" name="search" value="{{ search_query }}" placeholder="Search employees by name or email...">
+            <div class="search-loader"></div>
           </div>
         </div>
       </div>
@@ -114,8 +115,14 @@
   <!-- Employee Table -->
   <div class="card shadow-sm">
     <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="card-title mb-0">Employee List</h5>
+        <button class="btn btn-sm btn-outline-primary" id="refreshEmployees" title="Refresh Employee List">
+          <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+      </div>
       <div class="table-responsive">
-        <table class="table table-hover align-middle">
+        <table class="table table-hover align-middle" id="employeesTable">
           <thead>
             <tr>
               <th>Employee</th>
@@ -207,9 +214,24 @@
     const departmentFilter = document.getElementById('departmentFilter');
     const statusFilter = document.getElementById('statusFilter');
     const tableBody = document.getElementById('employeeTableBody');
+    const refreshBtn = document.getElementById('refreshEmployees');
     const paginationContainer = document.querySelector('.pagination');
 
-    function fetchEmployees() {
+    let searchTimeout;
+
+    function fetchEmployees(showLoader = true) {
+      // Clear previous timeout
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+      
+      // Debounce search
+      searchTimeout = setTimeout(() => {
+        if (showLoader) {
+          LoaderUtils.showSearchLoader('searchEmployee');
+          LoaderUtils.showTableLoader('employeesTable');
+        }
+        
       const searchQuery = searchInput.value;
       const department = departmentFilter.value;
       const status = statusFilter.value;
@@ -221,25 +243,140 @@
           'X-Requested-With': 'XMLHttpRequest'
         }
       })
-      .then(response => response.text())
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.text();
+        })
       .then(html => {
+          LoaderUtils.hideSearchLoader('searchEmployee');
+          
+          // Animate table update
+          tableBody.style.opacity = '0.5';
+          setTimeout(() => {
         tableBody.innerHTML = html;
-        // Since we are replacing the content, we might need to re-evaluate the pagination
-        // For simplicity, this example will hide pagination during live search.
-        // A more complex implementation would update pagination as well.
-        if (paginationContainer) {
-            // Logic to update pagination would go here.
-            // For now, we just replace the table body.
-            // We need to fetch the main page again to get correct pagination for the new filter.
-            // A better approach is to have the AJAX return both table and pagination HTML.
-        }
-      })
-      .catch(error => console.error('Error fetching employees:', error));
+            tableBody.style.opacity = '1';
+            
+            // Reinitialize any tooltips or interactive elements
+            initializeTooltips();
+          }, 200);
+        })
+        .catch(error => {
+          console.error('Error fetching employees:', error);
+          LoaderUtils.hideSearchLoader('searchEmployee');
+          
+          // Show error message
+          const errorRow = `
+            <tr>
+              <td colspan="5" class="text-center text-danger py-4">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Error loading employees. Please try again.
+              </td>
+            </tr>
+          `;
+          tableBody.innerHTML = errorRow;
+        });
+      }, 200); // 200ms debounce
+    }
+    
+    function initializeTooltips() {
+      // Reinitialize Bootstrap tooltips for new content
+      const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+      });
+    }
+    
+    function refreshEmployeeList() {
+      LoaderUtils.showButtonLoader(refreshBtn, '<i class="bi bi-arrow-clockwise"></i> Refreshing...');
+      LoaderUtils.showTableLoader('employeesTable');
+      
+      // Reset filters
+      searchInput.value = '';
+      departmentFilter.value = '';
+      statusFilter.value = '';
+      
+      // Fetch fresh data
+      setTimeout(() => {
+        fetchEmployees(false);
+        LoaderUtils.hideButtonLoader(refreshBtn);
+        
+        // Show success message
+        const successDiv = document.createElement('div');
+        successDiv.className = 'alert alert-success alert-dismissible fade show';
+        successDiv.innerHTML = `
+          <i class="bi bi-check-circle me-2"></i>Employee list refreshed successfully!
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector('.container-fluid').prepend(successDiv);
+        
+        // Auto-hide after 2 seconds
+        setTimeout(() => {
+          if (successDiv) {
+            successDiv.remove();
+          }
+        }, 2000);
+      }, 300);
     }
 
-    searchInput.addEventListener('keyup', fetchEmployees);
-    departmentFilter.addEventListener('change', fetchEmployees);
-    statusFilter.addEventListener('change', fetchEmployees);
+    // Event listeners
+    searchInput.addEventListener('keyup', () => fetchEmployees());
+    departmentFilter.addEventListener('change', () => fetchEmployees());
+    statusFilter.addEventListener('change', () => fetchEmployees());
+    refreshBtn.addEventListener('click', refreshEmployeeList);
+    
+    // Initialize tooltips on page load
+    initializeTooltips();
+    
+    // Add status update functionality with loaders
+    window.updateEmployeeStatus = function(employeeId, newStatus, button) {
+      LoaderUtils.showButtonLoader(button, 'Updating...');
+      
+      const formData = new FormData();
+      formData.append('status', newStatus);
+      formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+      
+      fetch(`{% url 'update_employee_status' 0 %}`.replace('0', employeeId), {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        LoaderUtils.hideButtonLoader(button);
+        
+        if (data.status === 'success') {
+          // Show success animation
+          LoaderUtils.showSuccess(button.parentElement, 'Status updated!');
+          
+          // Refresh the table to show updated data
+          setTimeout(() => {
+            fetchEmployees(false);
+          }, 800);
+        } else {
+          // Show error message
+          const errorDiv = document.createElement('div');
+          errorDiv.className = 'alert alert-danger alert-dismissible fade show';
+          errorDiv.innerHTML = `
+            <i class="bi bi-exclamation-triangle me-2"></i>Error: ${data.message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          `;
+          document.querySelector('.container-fluid').prepend(errorDiv);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        LoaderUtils.hideButtonLoader(button);
+        
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger alert-dismissible fade show';
+        errorDiv.innerHTML = `
+          <i class="bi bi-exclamation-triangle me-2"></i>An error occurred while updating status.
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector('.container-fluid').prepend(errorDiv);
+      });
+    };
   });
 </script>
 {% endblock %}

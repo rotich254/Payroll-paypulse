@@ -48,7 +48,7 @@
                                 </div>
                             {% endfor %}
                         {% endif %}
-                        <form method="POST" action="{% url 'add_employee' %}" class="needs-validation" novalidate>
+                        <form method="POST" action="{% url 'add_employee' %}" class="needs-validation" id="addEmployeeForm" novalidate>
                             {% csrf_token %}
                             
                             <div class="row g-4">
@@ -146,7 +146,7 @@
                                         <a href="{% url 'employee_list' %}" class="btn btn-outline-secondary btn-lg px-4">
                                             <i class="bi bi-x-circle me-2"></i>Cancel
                                         </a>
-                                        <button type="submit" class="btn btn-primary btn-lg px-5 card-hover">
+                                        <button type="submit" class="btn btn-primary btn-lg px-5 card-hover" id="submitBtn">
                                             <i class="bi bi-person-plus-fill me-2"></i>Add Employee
                                         </button>
                                     </div>
@@ -177,31 +177,135 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Form validation
+        // Basic LoaderUtils for standalone page
+        const LoaderUtils = {
+            showButtonLoader: function(button, text = null) {
+                if (typeof button === 'string') {
+                    button = document.getElementById(button);
+                }
+                if (button) {
+                    button.dataset.originalText = button.innerHTML;
+                    button.classList.add('disabled');
+                    button.disabled = true;
+                    if (text) {
+                        button.innerHTML = text;
+                    }
+                }
+            },
+            
+            hideButtonLoader: function(button) {
+                if (typeof button === 'string') {
+                    button = document.getElementById(button);
+                }
+                if (button && button.dataset.originalText) {
+                    button.classList.remove('disabled');
+                    button.disabled = false;
+                    button.innerHTML = button.dataset.originalText;
+                    delete button.dataset.originalText;
+                }
+            }
+        };
+
+        // Enhanced form validation with loaders
         (function() {
             'use strict';
             
-            // Fetch all forms we want to apply validation to
-            var forms = document.querySelectorAll('.needs-validation');
-            
-            // Loop over them and prevent submission
-            Array.prototype.slice.call(forms).forEach(function(form) {
-                form.addEventListener('submit', function(event) {
-                    if (!form.checkValidity()) {
+            document.addEventListener('DOMContentLoaded', function() {
+                const forms = document.querySelectorAll('.needs-validation');
+                const submitBtn = document.getElementById('submitBtn');
+                
+                Array.prototype.slice.call(forms).forEach(function(form) {
+                    form.addEventListener('submit', function(event) {
                         event.preventDefault();
                         event.stopPropagation();
-                    }
+                        
+                        if (!form.checkValidity()) {
+                            form.classList.add('was-validated');
+                            
+                            // Show validation error message
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
+                            errorDiv.innerHTML = `
+                                <i class="bi bi-exclamation-triangle me-2"></i>Please fill in all required fields correctly.
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            `;
+                            form.prepend(errorDiv);
+                            
+                            // Auto-hide after 5 seconds
+                            setTimeout(() => {
+                                if (errorDiv && errorDiv.parentNode) {
+                                    errorDiv.remove();
+                                }
+                            }, 5000);
+                            
+                            return;
+                        }
+                        
+                        // Form is valid, show loading and submit
+                        LoaderUtils.showButtonLoader(submitBtn, '<i class="bi bi-hourglass-split me-2"></i>Adding Employee...');
+                        
+                        // Show success message and submit quickly
+                        setTimeout(() => {
+                            const successDiv = document.createElement('div');
+                            successDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
+                            successDiv.innerHTML = `
+                                <i class="bi bi-check-circle me-2"></i>Processing employee information...
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            `;
+                            form.prepend(successDiv);
+                            
+                            // Submit the form
+                            form.submit();
+                        }, 200);
+                        
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+                
+                // Set default date to today
+                const today = new Date().toISOString().split('T')[0];
+                const joinDateInput = document.getElementById('joinDate');
+                if (joinDateInput) {
+                    joinDateInput.value = today;
+                }
+                
+                // Add real-time validation feedback
+                const inputs = document.querySelectorAll('input[required], select[required]');
+                inputs.forEach(input => {
+                    input.addEventListener('blur', function() {
+                        if (this.checkValidity()) {
+                            this.classList.remove('is-invalid');
+                            this.classList.add('is-valid');
+                        } else {
+                            this.classList.remove('is-valid');
+                            this.classList.add('is-invalid');
+                        }
+                    });
                     
-                    form.classList.add('was-validated');
-                }, false);
+                    input.addEventListener('input', function() {
+                        if (this.classList.contains('is-invalid') && this.checkValidity()) {
+                            this.classList.remove('is-invalid');
+                            this.classList.add('is-valid');
+                        }
+                    });
+                });
+                
+                // Format salary input
+                const salaryInput = document.getElementById('salary');
+                if (salaryInput) {
+                    salaryInput.addEventListener('input', function() {
+                        let value = this.value.replace(/[^\d.]/g, '');
+                        if (value && value.includes('.')) {
+                            const parts = value.split('.');
+                            if (parts[1] && parts[1].length > 2) {
+                                value = parts[0] + '.' + parts[1].substring(0, 2);
+                            }
+                        }
+                        this.value = value;
+                    });
+                }
             });
         })();
-        
-        // Set default date to today
-        document.addEventListener('DOMContentLoaded', function() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('joinDate').value = today;
-        });
     </script>
 </body>
 </html>

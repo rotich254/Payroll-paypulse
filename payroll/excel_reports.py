@@ -100,13 +100,7 @@ def generate_payroll_excel(request, start_date, end_date):
 
     messages.success(request, "Payroll report generated and saved successfully.")
     
-    # Return an HTTP response for download
-    response = HttpResponse(
-        buffer.getvalue(),
-        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-    response["Content-Disposition"] = f"attachment; filename={report_name}"
-    return response
+    return report
 
 
 def generate_tax_excel(request, start_date, end_date):
@@ -151,12 +145,7 @@ def generate_tax_excel(request, start_date, end_date):
 
     messages.success(request, "Tax report generated and saved successfully.")
 
-    response = HttpResponse(
-        buffer.getvalue(),
-        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-    response["Content-Disposition"] = f"attachment; filename={report_name}"
-    return response
+    return report
 
 
 def generate_employee_excel(request, start_date, end_date):
@@ -199,12 +188,7 @@ def generate_employee_excel(request, start_date, end_date):
 
     messages.success(request, "Employee report generated and saved successfully.")
 
-    response = HttpResponse(
-        buffer.getvalue(),
-        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-    response["Content-Disposition"] = f"attachment; filename={report_name}"
-    return response
+    return report
 
 
 def generate_department_excel(request, start_date, end_date):
@@ -260,9 +244,4 @@ def generate_department_excel(request, start_date, end_date):
 
     messages.success(request, "Department summary report generated and saved successfully.")
 
-    response = HttpResponse(
-        buffer.getvalue(),
-        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-    response["Content-Disposition"] = f"attachment; filename={report_name}"
-    return response
+    return report

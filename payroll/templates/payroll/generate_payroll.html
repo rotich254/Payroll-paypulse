@@ -1,67 +1,257 @@
-{% load static %}
-{% block content %}
 <div class="container-fluid px-4">
     <div class="row mb-4">
         <div class="col-12">
             <div class="card border-0 shadow">
                 <div class="card-body">
                     <h4 class="card-title mb-4">Generate Individual Payroll</h4>
-                    <form id="payrollForm" class="row g-3">
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <form id="payrollForm" class="row g-3" method="POST" action="{% url 'generate_payroll' %}">
                         {% csrf_token %}
+                        
                         <div class="col-md-6">
-                            <label for="employee" class="form-label">Employee</label>
-                            <select class="form-select select2" id="employee" name="employee" required>
-                                <option value="">Select employee...</option>
-                            </select>
+                            <label for="{{ form.employee.id_for_label }}" class="form-label">Employee</label>
+                            {{ form.employee }}
+                            {% if form.employee.errors %}
+                                <div class="text-danger mt-1">
+                                    {{ form.employee.errors.as_text }}
+                                </div>
+                            {% endif %}
                         </div>
 
                         <div class="col-md-6">
-                            <label for="pay_date" class="form-label">Pay Date</label>
-                            <input type="date" class="form-control" id="pay_date" name="pay_date" required>
+                            <label for="{{ form.pay_period.id_for_label }}" class="form-label">Pay Date</label>
+                            {{ form.pay_period }}
+                            {% if form.pay_period.errors %}
+                                <div class="text-danger mt-1">
+                                    {{ form.pay_period.errors.as_text }}
+                                </div>
+                            {% endif %}
                         </div>
 
                         <div class="col-md-4">
-                            <label for="gross_salary" class="form-label">Gross Salary</label>
-                            <div class="input-group">
-                                <span class="input-group-text">KES</span>
-                                <input type="text" 
-                                       class="form-control text-end fw-bold" 
-                                       id="gross_salary" 
-                                       name="gross_salary"
-                                       readonly
-                                       style="background-color: #f8f9fa;">
+                            <label for="{{ form.total_allowances.id_for_label }}" class="form-label">Allowances</label>
+                            {{ form.total_allowances }}
+                            {% if form.total_allowances.errors %}
+                                <div class="text-danger mt-1">
+                                    {{ form.total_allowances.errors.as_text }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Net Salary Calculation Section -->
+                        <div class="col-12" id="salaryBreakdown" style="display: none;">
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">
+                                        <i class="bi bi-calculator me-2"></i>Salary Breakdown
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6 class="text-success mb-3">Earnings</h6>
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Basic Salary:</span>
+                                                <span class="fw-bold" id="basicSalary">KSh 0.00</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Allowances:</span>
+                                                <span class="fw-bold text-success" id="allowancesDisplay">KSh 0.00</span>
+                                            </div>
+                                            <hr>
+                                            <div class="d-flex justify-content-between mb-3">
+                                                <span class="fw-bold">Gross Total:</span>
+                                                <span class="fw-bold text-success" id="grossTotal">KSh 0.00</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6 class="text-danger mb-3">Deductions</h6>
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Tax (<span id="taxRate">16</span>%):</span>
+                                                <span class="fw-bold" id="taxAmount">KSh 0.00</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Health Insurance:</span>
+                                                <span class="fw-bold" id="healthInsurance">KSh 2,000.00</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Retirement (<span id="retirementRate">5</span>%):</span>
+                                                <span class="fw-bold" id="retirementAmount">KSh 0.00</span>
+                                            </div>
+                                            <hr>
+                                            <div class="d-flex justify-content-between mb-3">
+                                                <span class="fw-bold">Total Deductions:</span>
+                                                <span class="fw-bold text-danger" id="totalDeductions">KSh 0.00</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="alert alert-info">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span class="fs-5 fw-bold">Net Salary:</span>
+                                                    <span class="fs-4 fw-bold text-primary" id="netSalary">KSh 0.00</span>
+                                                </div>
+                                            </div>
+                                            <div class="alert alert-warning" id="warningMessage" style="display: none;">
+                                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                                <small>Net salary is less than 1/3 of gross salary. Please review allowances and deductions.</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="col-md-4">
-                            <label for="total_allowances" class="form-label">Allowances</label>
-                            <input type="number" class="form-control" id="total_allowances" name="total_allowances" value="0.00" step="0.01">
-                        </div>
-
-                        <div class="col-md-4">
-                            <label for="total_deductions" class="form-label">Deductions</label>
-                            <input type="number" class="form-control" id="total_deductions" name="total_deductions" value="0.00" step="0.01">
-                        </div>
-
-                        <div class="col-md-4">
-                            <label for="net_salary" class="form-label">Net Salary</label>
-                            <input type="number" class="form-control" id="net_salary" name="net_salary" readonly>
-                        </div>
-
                         <div class="col-12">
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary" id="generatePayrollBtn" disabled>
                                 <i class="bi bi-save me-2"></i>Generate Payroll
                             </button>
+                            <div class="mt-2">
+                                <small class="text-muted">Select an employee to see salary breakdown</small>
+                            </div>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Preview Section -->
-    <div id="payrollPreview" class="row mb-4" style="display: none;">
-        <!-- Preview content will be inserted here -->
-    </div>
 </div>
-{% endblock %}
+
+<script>
+(function() {
+    const employeeSelect = document.getElementById('employee');
+    const allowancesInput = document.getElementById('total_allowances');
+    const salaryBreakdown = document.getElementById('salaryBreakdown');
+    const generateBtn = document.getElementById('generatePayrollBtn');
+    
+    let currentEmployeeData = null;
+
+    // Function to format currency
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('en-KE', {
+            style: 'currency',
+            currency: 'KES',
+            minimumFractionDigits: 2
+        }).format(amount).replace('KES', 'KSh');
+    }
+
+    // Function to update salary breakdown
+    function updateSalaryBreakdown(employeeData, allowances = 0) {
+        if (!employeeData) return;
+
+        const basicSalary = parseFloat(employeeData.salary);
+        const allowancesAmount = parseFloat(allowances) || 0;
+        const grossTotal = basicSalary + allowancesAmount;
+        
+        const taxRate = parseFloat(employeeData.tax_rate);
+        const healthInsurance = parseFloat(employeeData.health_insurance);
+        const retirementRate = parseFloat(employeeData.retirement_rate);
+        
+        // Calculate tax on gross total (basic + allowances)
+        const taxAmount = grossTotal * taxRate / 100;
+        const retirementAmount = basicSalary * retirementRate / 100; // Retirement calculated on basic only
+        
+        const totalDeductions = taxAmount + healthInsurance + retirementAmount;
+        const netSalary = grossTotal - totalDeductions;
+        const minNetSalary = parseFloat(employeeData.min_net_salary);
+
+        // Update display elements
+        document.getElementById('basicSalary').textContent = formatCurrency(basicSalary);
+        document.getElementById('allowancesDisplay').textContent = formatCurrency(allowancesAmount);
+        document.getElementById('grossTotal').textContent = formatCurrency(grossTotal);
+        
+        document.getElementById('taxRate').textContent = taxRate;
+        document.getElementById('taxAmount').textContent = formatCurrency(taxAmount);
+        document.getElementById('healthInsurance').textContent = formatCurrency(healthInsurance);
+        document.getElementById('retirementRate').textContent = retirementRate;
+        document.getElementById('retirementAmount').textContent = formatCurrency(retirementAmount);
+        document.getElementById('totalDeductions').textContent = formatCurrency(totalDeductions);
+        
+        document.getElementById('netSalary').textContent = formatCurrency(netSalary);
+
+        // Show warning if net salary is less than 1/3 of gross salary
+        const warningMessage = document.getElementById('warningMessage');
+        if (netSalary < minNetSalary) {
+            warningMessage.style.display = 'block';
+            warningMessage.innerHTML = `<i class="bi bi-exclamation-triangle me-2"></i>
+                <small>Net salary (${formatCurrency(netSalary)}) is less than 1/3 of gross salary (${formatCurrency(minNetSalary)}). Please review allowances and deductions.</small>`;
+            generateBtn.disabled = true;
+        } else {
+            warningMessage.style.display = 'none';
+            generateBtn.disabled = false;
+        }
+    }
+
+    // Handle employee selection change
+    employeeSelect.addEventListener('change', function() {
+        const employeeId = this.value;
+        
+        if (!employeeId) {
+            salaryBreakdown.style.display = 'none';
+            generateBtn.disabled = true;
+            currentEmployeeData = null;
+            return;
+        }
+
+        // Fetch employee salary data
+        fetch(`/get-employee-salary/${employeeId}/`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    console.error('Error:', data.error);
+                    return;
+                }
+                
+                currentEmployeeData = data;
+                salaryBreakdown.style.display = 'block';
+                
+                // Update breakdown with current allowances
+                const currentAllowances = allowancesInput.value || 0;
+                updateSalaryBreakdown(data, currentAllowances);
+                
+                // Enable generate button if no warnings
+                const allowancesAmount = parseFloat(currentAllowances) || 0;
+                const grossTotal = parseFloat(data.salary) + allowancesAmount;
+                const taxAmount = grossTotal * parseFloat(data.tax_rate) / 100;
+                const retirementAmount = parseFloat(data.salary) * parseFloat(data.retirement_rate) / 100;
+                const totalDeductions = taxAmount + parseFloat(data.health_insurance) + retirementAmount;
+                const netSalary = grossTotal - totalDeductions;
+                
+                if (netSalary >= parseFloat(data.min_net_salary)) {
+                    generateBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching employee data:', error);
+                salaryBreakdown.style.display = 'none';
+                generateBtn.disabled = true;
+            });
+    });
+
+    // Handle allowances input change
+    allowancesInput.addEventListener('input', function() {
+        if (currentEmployeeData) {
+            updateSalaryBreakdown(currentEmployeeData, this.value);
+        }
+    });
+
+    // Initialize if employee is already selected
+    if (employeeSelect.value) {
+        employeeSelect.dispatchEvent(new Event('change'));
+    }
+})();
+</script>

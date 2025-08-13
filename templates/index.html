@@ -81,7 +81,7 @@
     <div class="bg-white rounded shadow p-4 mb-4">
       <h3 class="fs-4 mb-3">Recent Payments</h3>
       <div class="table-responsive-card">
-        <table class="table bg-white rounded shadow-sm table-hover">
+        <table class="table bg-white rounded shadow-sm table-hover" id="recentPayrollsTable">
           <thead>
             <tr>
               <th scope="col">Employee</th>
@@ -131,7 +131,7 @@
     <div class="bg-white rounded shadow p-4 mb-4">
       <h3 class="fs-4 mb-3">Upcoming Payroll Schedule</h3>
       <div class="table-responsive-card">
-        <table class="table bg-white rounded shadow-sm table-hover">
+        <table class="table bg-white rounded shadow-sm table-hover" id="upcomingPayrollsTable">
           <thead>
             <tr>
               <th scope="col">Employee</th>
@@ -178,7 +178,7 @@
   <div class="col-md-6">
     <div class="bg-white rounded shadow p-4 mb-4">
       <h3 class="fs-4 mb-3">Payroll by Department</h3>
-      <div class="chart-container">
+      <div class="chart-container" id="payrollChartContainer">
         <canvas id="departmentPayrollChart"></canvas>
       </div>
     </div>
@@ -187,7 +187,7 @@
   <div class="col-md-6">
     <div class="bg-white rounded shadow p-4 mb-4">
       <h3 class="fs-4 mb-3">Employee Distribution</h3>
-      <div class="chart-container">
+      <div class="chart-container" id="employeeChartContainer">
         <canvas id="employeeDistributionChart"></canvas>
       </div>
     </div>
@@ -199,6 +199,17 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    // Show chart loaders initially
+    LoaderUtils.showChartLoader('payrollChartContainer');
+    LoaderUtils.showChartLoader('employeeChartContainer');
+    
+    // Initialize dashboard with minimal delay
+    setTimeout(() => {
+      initializeDashboard();
+    }, 200);
+  });
+  
+  function initializeDashboard() {
     // Chart data from Django context
     const departments = {{ chart_departments|safe }};
     const payrollByDepartment = {{ payroll_by_department|safe }};
@@ -206,6 +217,10 @@
     
     // Set legend position based on screen size
     const legendPosition = window.innerWidth < 768 ? 'bottom' : 'right';
+    
+    // Hide chart loaders
+    LoaderUtils.hideChartLoader('payrollChartContainer');
+    LoaderUtils.hideChartLoader('employeeChartContainer');
     
     // Payroll by Department Chart
     const payrollCtx = document.getElementById('departmentPayrollChart').getContext('2d');
@@ -288,6 +303,59 @@
         });
       }
     });
-  });
+    
+    // Add refresh functionality with loaders
+    setupDashboardRefresh();
+  }
+  
+  function setupDashboardRefresh() {
+    // Add refresh button to cards
+    const payrollCard = document.querySelector('#recentPayrollsTable').closest('.card, .bg-white');
+    const upcomingCard = document.querySelector('#upcomingPayrollsTable').closest('.card, .bg-white');
+    
+    if (payrollCard) {
+      addRefreshButton(payrollCard, 'recentPayrollsTable', refreshRecentPayrolls);
+    }
+    
+    if (upcomingCard) {
+      addRefreshButton(upcomingCard, 'upcomingPayrollsTable', refreshUpcomingPayrolls);
+    }
+  }
+  
+  function addRefreshButton(card, tableId, refreshFunction) {
+    const header = card.querySelector('h3');
+    if (header && !header.querySelector('.refresh-btn')) {
+      const refreshBtn = document.createElement('button');
+      refreshBtn.className = 'btn btn-sm btn-outline-primary refresh-btn ms-2';
+      refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+      refreshBtn.title = 'Refresh data';
+      refreshBtn.onclick = refreshFunction;
+      header.appendChild(refreshBtn);
+    }
+  }
+  
+  function refreshRecentPayrolls() {
+    LoaderUtils.showTableLoader('recentPayrollsTable');
+    
+    // Simulate refresh - in real implementation, make AJAX call
+    setTimeout(() => {
+      LoaderUtils.showSuccess('recentPayrollsTable', 'Data refreshed successfully!');
+      setTimeout(() => {
+        location.reload(); // Reload page to get fresh data
+      }, 800);
+    }, 500);
+  }
+  
+  function refreshUpcomingPayrolls() {
+    LoaderUtils.showTableLoader('upcomingPayrollsTable');
+    
+    // Simulate refresh - in real implementation, make AJAX call
+    setTimeout(() => {
+      LoaderUtils.showSuccess('upcomingPayrollsTable', 'Data refreshed successfully!');
+      setTimeout(() => {
+        location.reload(); // Reload page to get fresh data
+      }, 800);
+    }, 500);
+  }
 </script>
 {% endblock %}

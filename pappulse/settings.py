@@ -153,6 +153,13 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Session settings for auto-logout
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Store sessions in the database
+SESSION_COOKIE_AGE = 900  # Logout after 15 minutes of inactivity (15 * 60 seconds)
+SESSION_SAVE_EVERY_REQUEST = True  # Update session on each request to reset the idle timer
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Expire session when the browser is closed
+
+
 # Authentication settings
 LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = 'login'

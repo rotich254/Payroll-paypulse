@@ -62,6 +62,13 @@
             <div class="card">
                 <div class="card-body p-4">
                     <h4 class="login-title text-center mb-4">Welcome Back!</h4>
+
+                    {% if request.GET.reason == 'idle' %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-clock-history"></i>
+                        You have been automatically logged out due to inactivity.
+                    </div>
+                    {% endif %}
                     
                     {% if form.errors %}
                     <div class="alert alert-danger">
@@ -91,8 +98,10 @@
                             <label for="password"><i class="bi bi-lock me-2"></i>Password</label>
                         </div>
                         <div class="d-grid">
-                            <button class="btn btn-primary btn-lg" type="submit">
-                                <i class="bi bi-box-arrow-in-right me-2"></i>Log In
+                            <button class="btn btn-primary btn-lg" type="submit" id="login-btn">
+                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                <i class="bi bi-box-arrow-in-right me-2"></i>
+                                <span class="login-text">Log In</span>
                             </button>
                         </div>
                         <input type="hidden" name="next" value="{{ next }}">
@@ -112,7 +121,13 @@
             Array.prototype.slice.call(forms)
                 .forEach(function(form) {
                     form.addEventListener('submit', function(event) {
-                        if (!form.checkValidity()) {
+                        if (form.checkValidity()) {
+                            const loginBtn = document.getElementById('login-btn');
+                            loginBtn.disabled = true;
+                            loginBtn.querySelector('.spinner-border').classList.remove('d-none');
+                            loginBtn.querySelector('.login-text').textContent = 'Logging In...';
+                            loginBtn.querySelector('.bi-box-arrow-in-right').classList.add('d-none');
+                        } else {
                             event.preventDefault()
                             event.stopPropagation()
                         }

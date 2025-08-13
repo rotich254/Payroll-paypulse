@@ -7,6 +7,7 @@ from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_protect
 from django.http import JsonResponse, HttpResponse, Http404
+import time  # Add for simulating loading delays
 from django.db.models import Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from decimal import Decimal, InvalidOperation  # Add InvalidOperation
@@ -21,6 +22,7 @@ import os
 from django.db.models import Sum
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib.auth import logout
 
 # Replace WeasyPrint imports with ReportLab
 from reportlab.pdfgen import canvas
@@ -41,6 +43,24 @@ from openpyxl.utils import get_column_letter
 
 # Configure basic logging (consider moving to settings.py for production)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+def ajax_loading_delay(min_delay=0.1):
+    """
+    Decorator to add minimal loading time for AJAX requests (only if needed for very fast responses)
+    """
+    def decorator(view_func):
+        def wrapper(request, *args, **kwargs):
+            start_time = time.time()
+            response = view_func(request, *args, **kwargs)
+            elapsed = time.time() - start_time
+            
+            # Only add minimal delay for extremely fast responses to ensure loader visibility
+            if elapsed < min_delay and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                time.sleep(min_delay - elapsed)
+            
+            return response
+        return wrapper
+    return decorator
 
 @login_required
 def index(request):
@@ -219,6 +239,7 @@ def company_settings(request):
 
 @login_required
 @require_POST
+@ajax_loading_delay(0.2)
 def update_employee_status(request, employee_id):
     try:
         employee = get_object_or_404(Employee, id=employee_id)
@@ -234,10 +255,51 @@ def update_employee_status(request, employee_id):
 
 @login_required
 def payroll(request):
-    # Your view logic here
-    return render(request, 'payroll/payroll.html')
+    if request.method == 'POST':
+        form = PayrollForm(request.POST)
+        if form.is_valid():
+            employee = form.cleaned_data['employee']
+            allowances = form.cleaned_data['total_allowances']
+            
+            # Perform payroll calculations
+            gross_salary = Decimal(employee.salary)
+            tax_rate = Decimal('16.00')
+            health_insurance = Decimal('2000.00')
+            retirement_rate = Decimal('5.00')
+            tax_amount = gross_salary * tax_rate / Decimal('100')
+            retirement_amount = gross_salary * retirement_rate / Decimal('100')
+            other_deductions = Decimal('0.00')
+            total_deductions_sum = tax_amount + health_insurance + retirement_amount + other_deductions
+            net_salary = gross_salary + allowances - total_deductions_sum
+
+            min_net_salary = gross_salary / 3
+            if net_salary < min_net_salary:
+                form.add_error(None, f'Error: Net pay ({net_salary:,.2f}) is less than 1/3 of gross salary ({min_net_salary:,.2f}).')
+            else:
+                payroll = form.save(commit=False)
+                payroll.gross_salary = gross_salary
+                payroll.tax_rate = tax_rate
+                payroll.health_insurance = health_insurance
+                payroll.retirement_rate = retirement_rate
+                payroll.tax_amount = tax_amount
+                payroll.retirement_amount = retirement_amount
+                payroll.total_deductions = other_deductions
+                payroll.net_salary = net_salary
+                payroll.payment_status = 'pending'
+                payroll.save()
+                
+                messages.success(request, 'Payroll created successfully.')
+                return redirect('payroll_detail', payroll_id=payroll.id)
+    else:
+        form = PayrollForm()
+
+    context = {
+        'form': form,
+    }
+    return render(request, 'payroll/payroll.html', context)
 
 @login_required
+@ajax_loading_delay(0.1)
 def search_employees(request):
     search_term = request.GET.get('q', '')
     employees = Employee.objects.filter(
@@ -254,6 +316,7 @@ def search_employees(request):
     return JsonResponse({'results': results})
 
 @login_required
+@ajax_loading_delay(0.1)
 def get_employee_salary(request, employee_id):
     """API endpoint to get employee salary and calculate deductions"""
     try:
@@ -290,125 +353,7 @@ def get_employee_salary(request, employee_id):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
 
-@login_required
-def generate_payroll(request):
-    active_employees = Employee.objects.filter(is_active='active').order_by('first_name', 'last_name')
-    
-    # Retrieve all payrolls
-    all_payrolls = Payroll.objects.all().order_by('-pay_period')
-    context = {
-        'active_employees': active_employees,
-        'recent_payrolls': all_payrolls,
-    }
-
-    if request.method == 'POST':
-        try:
-            employee_id = request.POST.get('employee')
-            pay_date_str = request.POST.get('pay_date')
-
-            if not employee_id or not pay_date_str:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'Employee and pay date are required.'
-                }, status=400)
-
-            # Parse the date string to a datetime object
-            try:
-                pay_date = datetime.strptime(pay_date_str, '%Y-%m-%d').date()
-            except ValueError:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'Invalid date format. Use YYYY-MM-DD'
-                }, status=400)
-
-            # Validate that the pay date is not in the past
-            today = timezone.now().date()
-            if pay_date < today:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'Pay date cannot be in the past.'
-                }, status=400)
-
-            # Check if payroll already exists for this employee in the same month
-            existing_payroll = Payroll.objects.filter(
-                employee_id=employee_id,
-                pay_period__year=pay_date.year,
-                pay_period__month=pay_date.month
-            ).first()
-
-            if existing_payroll:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': f'A payroll record already exists for this employee for {pay_date.strftime("%B %Y")}.'
-                }, status=400)
-
-            employee = get_object_or_404(Employee, id=employee_id)
-            allowances = Decimal(request.POST.get('total_allowances', '0.00'))
-            
-            # All generated payrolls should be pending by default
-            payment_status = 'pending'
-            payment_date = None
-
-            # Perform payroll calculations
-            gross_salary = Decimal(employee.salary)
-            tax_rate = Decimal('16.00')
-            health_insurance = Decimal('2000.00')
-            retirement_rate = Decimal('5.00')
-
-            tax_amount = gross_salary * tax_rate / Decimal('100')
-            retirement_amount = gross_salary * retirement_rate / Decimal('100')
-            
-            # Assuming other deductions are 0 as there is no input field for it
-            other_deductions = Decimal('0.00')
-
-            # Start with statutory deductions
-            total_deductions_sum = tax_amount + health_insurance + retirement_amount + other_deductions
-            
-            # Calculate net salary
-            net_salary = gross_salary + allowances - total_deductions_sum
-            
-            # Enforce the 1/3 rule
-            min_net_salary = gross_salary / 3
-            if net_salary < min_net_salary:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': f'Error: Net pay ({net_salary:,.2f}) is less than 1/3 of gross salary ({min_net_salary:,.2f}). Payroll not generated.'
-                }, status=400)
-
-            # Create payroll record with calculated values
-            payroll = Payroll.objects.create(
-                employee=employee,
-                pay_period=pay_date,
-                gross_salary=gross_salary,
-                total_allowances=allowances,
-                tax_rate=tax_rate,
-                health_insurance=health_insurance,
-                retirement_rate=retirement_rate,
-                tax_amount=tax_amount,
-                retirement_amount=retirement_amount,
-                total_deductions=other_deductions,
-                net_salary=net_salary,
-                payment_status=payment_status,
-                payment_date=payment_date
-            )
-
-            return JsonResponse({
-                'status': 'success',
-                'message': f'Payroll created successfully with status: {payment_status.capitalize()}',
-                'data': {
-                    'detail_url': reverse('payroll_detail', args=[payroll.id]),
-                    'reference_id': payroll.reference_id,
-                    'payment_status': payment_status
-                }
-            })
-
-        except Exception as e:
-            return JsonResponse({
-                'status': 'error',
-                'message': f'Error creating payroll: {str(e)}'
-            }, status=400)
-
-    return render(request, 'payroll/generate_payroll.html', context)
+from .forms import EmployeeForm, CompanyForm, PayrollForm
 
 def get_payroll_periods():
     """Generate payroll periods for the next few months"""
@@ -618,6 +563,7 @@ def generate_payroll_pdf(request, payroll_id):
 
 @login_required
 @require_POST
+@ajax_loading_delay(0.2)
 def mark_payroll_paid(request, payroll_id):
     try:
         payroll = get_object_or_404(Payroll, id=payroll_id)
@@ -705,6 +651,7 @@ from .excel_reports import (
 )
 
 @login_required
+@ajax_loading_delay(0.3)
 def generate_report(request):
     """
     Handles report generation requests and calls the appropriate
@@ -718,19 +665,16 @@ def generate_report(request):
 
         # --- Basic Input Validation ---
         if not all([report_type, start_date_str, end_date_str]):
-            messages.error(request, "Missing required fields: report type, start date, or end date.")
-            return redirect('reports')
+            return JsonResponse({'status': 'error', 'message': 'Missing required fields: report type, start date, or end date.'}, status=400)
 
         try:
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
             end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
         except ValueError:
-            messages.error(request, "Invalid date format. Please use YYYY-MM-DD.")
-            return redirect('reports')
+            return JsonResponse({'status': 'error', 'message': 'Invalid date format. Please use YYYY-MM-DD.'}, status=400)
 
         if start_date > end_date:
-            messages.error(request, "Start date cannot be after end date.")
-            return redirect('reports')
+            return JsonResponse({'status': 'error', 'message': 'Start date cannot be after end date.'}, status=400)
 
         # --- Report Generation Logic ---
         try:
@@ -747,20 +691,27 @@ def generate_report(request):
                 generation_function = report_functions.get(report_type)
 
                 if generation_function:
-                    # Call the function, which now returns an HttpResponse for download
-                    response = generation_function(request, start_date, end_date)
-                    if response:
-                        return response
+                    # Call the function, which now returns a Report object
+                    report = generation_function(request, start_date, end_date)
+                    if report and isinstance(report, Report):
+                        return JsonResponse({
+                            'status': 'success',
+                            'message': 'Report generated successfully.',
+                            'download_url': report.file.url
+                        })
+                    else:
+                        # If the generation function returned None or something else
+                        return JsonResponse({'status': 'error', 'message': 'No data found for the selected criteria.'}, status=404)
                 else:
-                    messages.error(request, f"Invalid report type: '{report_type}'.")
+                    return JsonResponse({'status': 'error', 'message': f"Invalid report type: '{report_type}'."}, status=400)
             else:
-                messages.error(request, f"Unsupported format: '{report_format}'. Only Excel is supported.")
+                return JsonResponse({'status': 'error', 'message': f"Unsupported format: '{report_format}'. Only Excel is supported."}, status=400)
 
         except Exception as e:
             logging.error(f"Error generating report: {e}", exc_info=True)
-            messages.error(request, f"An unexpected error occurred: {str(e)}")
+            return JsonResponse({'status': 'error', 'message': f"An unexpected error occurred: {str(e)}"}, status=500)
 
-    return redirect('reports')
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)
 
 @login_required
 def download_report(request, report_id):
@@ -780,6 +731,52 @@ def download_report(request, report_id):
         'recent_reports': recent_reports,
         'departments': departments,
     })
+
+@login_required
+def generate_payroll(request):
+    """Generate individual payroll view"""
+    if request.method == 'POST':
+        form = PayrollForm(request.POST)
+        if form.is_valid():
+            employee = form.cleaned_data['employee']
+            allowances = form.cleaned_data['total_allowances']
+            other_deductions = form.cleaned_data.get('total_deductions', Decimal('0.00'))
+            
+            # Perform payroll calculations
+            gross_salary = Decimal(employee.salary)
+            tax_rate = Decimal('16.00')
+            health_insurance = Decimal('2000.00')
+            retirement_rate = Decimal('5.00')
+            tax_amount = gross_salary * tax_rate / Decimal('100')
+            retirement_amount = gross_salary * retirement_rate / Decimal('100')
+            total_deductions_sum = tax_amount + health_insurance + retirement_amount + other_deductions
+            net_salary = gross_salary + allowances - total_deductions_sum
+
+            min_net_salary = gross_salary / 3
+            if net_salary < min_net_salary:
+                form.add_error(None, f'Error: Net pay ({net_salary:,.2f}) is less than 1/3 of gross salary ({min_net_salary:,.2f}).')
+            else:
+                payroll = form.save(commit=False)
+                payroll.gross_salary = gross_salary
+                payroll.tax_rate = tax_rate
+                payroll.health_insurance = health_insurance
+                payroll.retirement_rate = retirement_rate
+                payroll.tax_amount = tax_amount
+                payroll.retirement_amount = retirement_amount
+                payroll.total_deductions = other_deductions
+                payroll.net_salary = net_salary
+                payroll.payment_status = 'pending'
+                payroll.save()
+                
+                messages.success(request, 'Payroll generated successfully.')
+                return redirect('payroll_detail', payroll_id=payroll.id)
+    else:
+        form = PayrollForm()
+
+    context = {
+        'form': form,
+    }
+    return render(request, 'payroll/generate_payroll.html', context)
 
 @login_required
 def generate_payroll_report(request, start_date, end_date, department=None):
