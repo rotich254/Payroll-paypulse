@@ -36,7 +36,7 @@
                             {% endif %}
                         </div>
 
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label for="{{ form.total_allowances.id_for_label }}" class="form-label">Allowances</label>
                             {{ form.total_allowances }}
                             {% if form.total_allowances.errors %}
@@ -44,6 +44,11 @@
                                     {{ form.total_allowances.errors.as_text }}
                                 </div>
                             {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="net_salary" class="form-label">Net Salary</label>
+                            <input type="text" id="net_salary" name="net_salary" class="form-control" readonly>
                         </div>
 
                         <!-- Net Salary Calculation Section -->
@@ -132,6 +137,15 @@
     const allowancesInput = document.getElementById('total_allowances');
     const salaryBreakdown = document.getElementById('salaryBreakdown');
     const generateBtn = document.getElementById('generatePayrollBtn');
+    const netSalaryField = document.getElementById('net_salary');
+    
+    // Initialize net salary field to empty
+    if (netSalaryField) {
+        netSalaryField.value = '';
+        console.log('Net salary field initialized');
+    } else {
+        console.error('Net salary field not found during initialization');
+    }
     
     let currentEmployeeData = null;
 
@@ -147,70 +161,109 @@
     // Function to update salary breakdown
     function updateSalaryBreakdown(employeeData, allowances = 0) {
         if (!employeeData) return;
+        
+        try {
+            const basicSalary = parseFloat(employeeData.salary);
+            const allowancesAmount = parseFloat(allowances) || 0;
+            const grossTotal = basicSalary + allowancesAmount;
+            
+            const taxRate = parseFloat(employeeData.tax_rate);
+            const healthInsurance = parseFloat(employeeData.health_insurance);
+            const retirementRate = parseFloat(employeeData.retirement_rate);
+            
+            // Calculate tax on gross total (basic + allowances)
+            const taxAmount = grossTotal * taxRate / 100;
+            const retirementAmount = basicSalary * retirementRate / 100; // Retirement calculated on basic only
+            
+            const totalDeductions = taxAmount + healthInsurance + retirementAmount;
+            const netSalary = grossTotal - totalDeductions;
+            const minNetSalary = parseFloat(employeeData.min_net_salary);
+            
+            // Update the net salary input field with debugging
+            console.log('Updating net salary field:', netSalary.toFixed(2));
+            // Make sure we're getting the element each time to avoid stale references
+            const netSalaryField = document.getElementById('net_salary');
+            console.log('Net salary field element:', netSalaryField);
+            try {
+                if (netSalaryField) {
+                    netSalaryField.value = netSalary.toFixed(2);
+                    console.log('Net salary field updated to:', netSalaryField.value);
+                } else {
+                    console.error('Net salary field not found!');
+                }
+            } catch (error) {
+                console.error('Error updating net salary field:', error);
+            }
 
-        const basicSalary = parseFloat(employeeData.salary);
-        const allowancesAmount = parseFloat(allowances) || 0;
-        const grossTotal = basicSalary + allowancesAmount;
-        
-        const taxRate = parseFloat(employeeData.tax_rate);
-        const healthInsurance = parseFloat(employeeData.health_insurance);
-        const retirementRate = parseFloat(employeeData.retirement_rate);
-        
-        // Calculate tax on gross total (basic + allowances)
-        const taxAmount = grossTotal * taxRate / 100;
-        const retirementAmount = basicSalary * retirementRate / 100; // Retirement calculated on basic only
-        
-        const totalDeductions = taxAmount + healthInsurance + retirementAmount;
-        const netSalary = grossTotal - totalDeductions;
-        const minNetSalary = parseFloat(employeeData.min_net_salary);
+            // Update display elements
+            try {
+                document.getElementById('basicSalary').textContent = formatCurrency(basicSalary);
+                document.getElementById('allowancesDisplay').textContent = formatCurrency(allowancesAmount);
+                document.getElementById('grossTotal').textContent = formatCurrency(grossTotal);
+                
+                document.getElementById('taxRate').textContent = taxRate;
+                document.getElementById('taxAmount').textContent = formatCurrency(taxAmount);
+                document.getElementById('healthInsurance').textContent = formatCurrency(healthInsurance);
+                document.getElementById('retirementRate').textContent = retirementRate;
+                document.getElementById('retirementAmount').textContent = formatCurrency(retirementAmount);
+                document.getElementById('totalDeductions').textContent = formatCurrency(totalDeductions);
+                
+                document.getElementById('netSalary').textContent = formatCurrency(netSalary);
 
-        // Update display elements
-        document.getElementById('basicSalary').textContent = formatCurrency(basicSalary);
-        document.getElementById('allowancesDisplay').textContent = formatCurrency(allowancesAmount);
-        document.getElementById('grossTotal').textContent = formatCurrency(grossTotal);
-        
-        document.getElementById('taxRate').textContent = taxRate;
-        document.getElementById('taxAmount').textContent = formatCurrency(taxAmount);
-        document.getElementById('healthInsurance').textContent = formatCurrency(healthInsurance);
-        document.getElementById('retirementRate').textContent = retirementRate;
-        document.getElementById('retirementAmount').textContent = formatCurrency(retirementAmount);
-        document.getElementById('totalDeductions').textContent = formatCurrency(totalDeductions);
-        
-        document.getElementById('netSalary').textContent = formatCurrency(netSalary);
-
-        // Show warning if net salary is less than 1/3 of gross salary
-        const warningMessage = document.getElementById('warningMessage');
-        if (netSalary < minNetSalary) {
-            warningMessage.style.display = 'block';
-            warningMessage.innerHTML = `<i class="bi bi-exclamation-triangle me-2"></i>
-                <small>Net salary (${formatCurrency(netSalary)}) is less than 1/3 of gross salary (${formatCurrency(minNetSalary)}). Please review allowances and deductions.</small>`;
-            generateBtn.disabled = true;
-        } else {
-            warningMessage.style.display = 'none';
-            generateBtn.disabled = false;
+                // Show warning if net salary is less than 1/3 of gross salary
+                const warningMessage = document.getElementById('warningMessage');
+                if (netSalary < minNetSalary) {
+                    warningMessage.style.display = 'block';
+                    warningMessage.innerHTML = `<i class="bi bi-exclamation-triangle me-2"></i>
+                        <small>Net salary (${formatCurrency(netSalary)}) is less than 1/3 of gross salary (${formatCurrency(minNetSalary)}). Please review allowances and deductions.</small>`;
+                    generateBtn.disabled = true;
+                } else {
+                    warningMessage.style.display = 'none';
+                    generateBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error updating salary breakdown display:', error);
+            }
+        } catch (error) {
+            console.error('Error in updateSalaryBreakdown function:', error);
         }
     }
 
     // Handle employee selection change
     employeeSelect.addEventListener('change', function() {
         const employeeId = this.value;
+        console.log('Employee selection changed to:', employeeId);
         
         if (!employeeId) {
             salaryBreakdown.style.display = 'none';
             generateBtn.disabled = true;
             currentEmployeeData = null;
+            try {
+                const netSalaryField = document.getElementById('net_salary');
+                if (netSalaryField) {
+                    netSalaryField.value = '';
+                    console.log('Net salary field cleared');
+                } else {
+                    console.error('Net salary field not found when clearing');
+                }
+            } catch (error) {
+                console.error('Error clearing net salary field:', error);
+            }
             return;
         }
 
         // Fetch employee salary data
+        console.log('Fetching employee salary data for ID:', employeeId);
         fetch(`/get-employee-salary/${employeeId}/`)
             .then(response => {
+                console.log('Response received:', response.status);
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
                 }
                 return response.json();
             })
             .then(data => {
+                console.log('Employee data received:', data);
                 if (data.error) {
                     console.error('Error:', data.error);
                     return;
@@ -218,6 +271,20 @@
                 
                 currentEmployeeData = data;
                 salaryBreakdown.style.display = 'block';
+                console.log('Updating salary breakdown with data:', data);
+                
+                // Directly set the net salary field value
+                try {
+                    const netSalaryField = document.getElementById('net_salary');
+                    if (netSalaryField && data.net_salary_before_allowances) {
+                        netSalaryField.value = parseFloat(data.net_salary_before_allowances).toFixed(2);
+                        console.log('Net salary field directly set to:', netSalaryField.value);
+                    } else if (!netSalaryField) {
+                        console.error('Net salary field not found when setting from employee data');
+                    }
+                } catch (error) {
+                    console.error('Error setting net salary field from employee data:', error);
+                }
                 
                 // Update breakdown with current allowances
                 const currentAllowances = allowancesInput.value || 0;
@@ -246,12 +313,41 @@
     allowancesInput.addEventListener('input', function() {
         if (currentEmployeeData) {
             updateSalaryBreakdown(currentEmployeeData, this.value);
+            
+            // Also update net salary field directly
+            try {
+                const netSalaryField = document.getElementById('net_salary');
+                if (netSalaryField) {
+                    const basicSalary = parseFloat(currentEmployeeData.salary);
+                    const allowancesAmount = parseFloat(this.value) || 0;
+                    const grossTotal = basicSalary + allowancesAmount;
+                    
+                    const taxRate = parseFloat(currentEmployeeData.tax_rate);
+                    const healthInsurance = parseFloat(currentEmployeeData.health_insurance);
+                    const retirementRate = parseFloat(currentEmployeeData.retirement_rate);
+                    
+                    const taxAmount = grossTotal * taxRate / 100;
+                    const retirementAmount = basicSalary * retirementRate / 100;
+                    
+                    const totalDeductions = taxAmount + healthInsurance + retirementAmount;
+                    const netSalary = grossTotal - totalDeductions;
+                    
+                    netSalaryField.value = netSalary.toFixed(2);
+                    console.log('Net salary field updated on allowance change:', netSalaryField.value);
+                } else {
+                    console.error('Net salary field not found during allowance change');
+                }
+            } catch (error) {
+                console.error('Error updating net salary field during allowance change:', error);
+            }
         }
     });
 
     // Initialize if employee is already selected
     if (employeeSelect.value) {
+        // Just trigger the change event which will handle everything
         employeeSelect.dispatchEvent(new Event('change'));
+        // No need to set net_salary value here as it will be set in the change event handler
     }
 })();
 </script>

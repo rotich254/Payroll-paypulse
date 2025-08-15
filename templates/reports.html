@@ -179,11 +179,9 @@
         const form = event.target;
         const btn = document.getElementById('generate-report-btn');
 
-        // Show enhanced button loading
-        LoaderUtils.showButtonLoader(btn, '<i class="bi bi-hourglass-split me-2"></i>Generating...');
-        
-        // Show page loader with custom message
-        LoaderUtils.showPageLoader('Generating your report...');
+        // Disable button to prevent multiple submissions
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Generating...';
 
         const formData = new FormData(form);
 
@@ -199,8 +197,9 @@
             LoaderUtils.hidePageLoader();
             
             if (data.status === 'success') {
-                // Show success animation first
-                LoaderUtils.showSuccess('generate-report-btn', 'Report Generated!');
+                // Reset button state
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-file-earmark-spreadsheet me-2"></i>Generate Report';
                 
                 // Create a success message
                 const messageDiv = document.createElement('div');
@@ -246,7 +245,10 @@
         })
         .catch(error => {
             console.error('Error:', error);
-            LoaderUtils.hidePageLoader();
+            
+            // Reset button state
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-file-earmark-spreadsheet me-2"></i>Generate Report';
             
             const messageDiv = document.createElement('div');
             messageDiv.className = 'alert alert-danger alert-dismissible fade show';
@@ -256,23 +258,17 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             `;
             document.querySelector('.container-fluid').prepend(messageDiv);
-        })
-        .finally(() => {
-            // Re-enable the button
-            LoaderUtils.hideButtonLoader(btn);
         });
     });
     
     // Add refresh functionality for reports table
     document.getElementById('refresh-reports-btn').addEventListener('click', function() {
-        LoaderUtils.showButtonLoader(this, '<i class="bi bi-arrow-clockwise"></i> Refreshing...');
-        LoaderUtils.showTableLoader('reportsTable');
+        // Show refreshing state
+        this.disabled = true;
+        this.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Refreshing...';
         
-        // Simulate refresh - in real implementation, make AJAX call
-        setTimeout(() => {
-            LoaderUtils.hideButtonLoader(this);
-            window.location.reload();
-        }, 300);
+        // Reload the page
+        window.location.reload();
     });
 </script>
 {% endblock %}

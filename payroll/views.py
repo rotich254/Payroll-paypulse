@@ -1,12 +1,65 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
 from django.contrib import messages
-from django.db import models  # Add this import
-from .models import Employee, Payroll, Report, Profile, Company
-from .forms import EmployeeForm, CompanyForm
+from django.db import models
 from django.views.decorators.http import require_POST
-from django.shortcuts import get_object_or_404
+from .models import Employee, Payroll, Report, Profile, Company
+from .forms import EmployeeForm, CompanyForm, PayrollForm
 from django.views.decorators.csrf import csrf_protect
 from django.http import JsonResponse, HttpResponse, Http404
+
+@login_required
+def profile(request):
+    user_profile, created = Profile.objects.get_or_create(user=request.user)
+    if request.method == 'POST':
+        # Handle profile update logic
+        user_profile.bio = request.POST.get('bio', '')
+        user_profile.phone_number = request.POST.get('phone_number', '')
+        
+        # Handle avatar upload
+        if 'avatar' in request.FILES:
+            user_profile.avatar = request.FILES['avatar']
+            
+        user_profile.save()
+        messages.success(request, 'Profile updated successfully.')
+        return redirect('profile')
+    
+    context = {
+        'profile': user_profile,
+        'department_choices': Employee.DEPARTMENT_CHOICES,
+    }
+    return render(request, 'payroll/profile.html', context)
+
+@login_required
+def settings(request):
+    # Handle user settings
+    if request.method == 'POST':
+        # Update user settings logic
+        user = request.user
+        user.first_name = request.POST.get('first_name', '')
+        user.last_name = request.POST.get('last_name', '')
+        user.email = request.POST.get('email', '')
+        
+        # Change password if provided
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+        
+        if new_password and new_password == confirm_password:
+            user.set_password(new_password)
+            user.save()
+            messages.success(request, 'Password updated successfully. Please login again.')
+            logout(request)
+            return redirect('login')
+        elif new_password:
+            messages.error(request, 'Passwords do not match.')
+            return redirect('settings')
+        
+        user.save()
+        messages.success(request, 'Settings updated successfully.')
+        return redirect('settings')
+    
+    return render(request, 'payroll/settings.html')
 import time  # Add for simulating loading delays
 from django.db.models import Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -44,23 +97,7 @@ from openpyxl.utils import get_column_letter
 # Configure basic logging (consider moving to settings.py for production)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def ajax_loading_delay(min_delay=0.1):
-    """
-    Decorator to add minimal loading time for AJAX requests (only if needed for very fast responses)
-    """
-    def decorator(view_func):
-        def wrapper(request, *args, **kwargs):
-            start_time = time.time()
-            response = view_func(request, *args, **kwargs)
-            elapsed = time.time() - start_time
-            
-            # Only add minimal delay for extremely fast responses to ensure loader visibility
-            if elapsed < min_delay and request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                time.sleep(min_delay - elapsed)
-            
-            return response
-        return wrapper
-    return decorator
+# Removed ajax_loading_delay decorator
 
 @login_required
 def index(request):
@@ -239,7 +276,6 @@ def company_settings(request):
 
 @login_required
 @require_POST
-@ajax_loading_delay(0.2)
 def update_employee_status(request, employee_id):
     try:
         employee = get_object_or_404(Employee, id=employee_id)
@@ -299,7 +335,6 @@ def payroll(request):
     return render(request, 'payroll/payroll.html', context)
 
 @login_required
-@ajax_loading_delay(0.1)
 def search_employees(request):
     search_term = request.GET.get('q', '')
     employees = Employee.objects.filter(
@@ -316,7 +351,6 @@ def search_employees(request):
     return JsonResponse({'results': results})
 
 @login_required
-@ajax_loading_delay(0.1)
 def get_employee_salary(request, employee_id):
     """API endpoint to get employee salary and calculate deductions"""
     try:
@@ -563,7 +597,6 @@ def generate_payroll_pdf(request, payroll_id):
 
 @login_required
 @require_POST
-@ajax_loading_delay(0.2)
 def mark_payroll_paid(request, payroll_id):
     try:
         payroll = get_object_or_404(Payroll, id=payroll_id)
@@ -651,7 +684,6 @@ from .excel_reports import (
 )
 
 @login_required
-@ajax_loading_delay(0.3)
 def generate_report(request):
     """
     Handles report generation requests and calls the appropriate

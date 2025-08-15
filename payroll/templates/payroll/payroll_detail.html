@@ -154,9 +154,9 @@ function markAsPaid(payrollId) {
     if (confirm('Are you sure you want to mark this payroll as paid?')) {
         const btn = document.getElementById('markPaidBtn');
         
-        // Show loading state
-        LoaderUtils.showButtonLoader(btn, '<i class="bi bi-hourglass-split me-2"></i>Processing...');
-        LoaderUtils.showPageLoader('Processing payment...');
+        // Show processing state
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Processing...';
         
         fetch(`{% url 'mark_payroll_paid' 0 %}`.replace('0', payrollId), {
             method: 'POST',
@@ -167,11 +167,10 @@ function markAsPaid(payrollId) {
         })
         .then(response => response.json())
         .then(data => {
-            LoaderUtils.hidePageLoader();
-            
             if (data.status === 'success') {
-                // Show success animation
-                LoaderUtils.showSuccess('markPaidBtn', 'Payment processed!');
+                // Reset button state
+                btn.disabled = false;
+                btn.innerHTML = 'Mark as Paid';
                 
                 // Create success message
                 const messageDiv = document.createElement('div');
@@ -187,7 +186,9 @@ function markAsPaid(payrollId) {
                     window.location.reload();
                 }, 1000);
             } else {
-                LoaderUtils.hideButtonLoader(btn);
+                // Reset button state
+                btn.disabled = false;
+                btn.innerHTML = 'Mark as Paid';
                 
                 // Show error message
                 const messageDiv = document.createElement('div');

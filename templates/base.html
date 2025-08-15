@@ -22,6 +22,20 @@
         #wrapper {
             display: flex;
         }
+        
+        /* Logout form styling */
+        #logout-form {
+            margin: 0;
+            padding: 0;
+        }
+        
+        #logout-form button.dropdown-item {
+            text-align: left;
+            background: none;
+            border: none;
+            width: 100%;
+            padding: 0.25rem 1rem;
+        }
         #sidebar-wrapper {
             width: 15rem;
             min-width: 15rem;
@@ -122,282 +136,7 @@
             color: #fff !important;
         }
 
-        /* ===============================
-           COOL LOADING ANIMATIONS
-           =============================== */
-        
-        /* Global Overlay Loader */
-        .page-loader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(5px);
-            z-index: 9999;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-        }
-        
-        .page-loader.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        /* Pulse Loader */
-        .pulse-loader {
-            display: inline-block;
-            width: 60px;
-            height: 60px;
-            position: relative;
-        }
-        
-        .pulse-loader::before,
-        .pulse-loader::after {
-            content: '';
-            position: absolute;
-            border: 3px solid #4e73df;
-            border-radius: 50%;
-            width: 100%;
-            height: 100%;
-            animation: pulse-animation 2s ease-in-out infinite;
-        }
-        
-        .pulse-loader::after {
-            animation-delay: -1s;
-        }
-        
-        @keyframes pulse-animation {
-            0% {
-                transform: scale(0);
-                opacity: 1;
-            }
-            100% {
-                transform: scale(1);
-                opacity: 0;
-            }
-        }
-
-        /* Spinning Dots Loader */
-        .dots-loader {
-            display: inline-block;
-            position: relative;
-            width: 80px;
-            height: 80px;
-        }
-        
-        .dots-loader div {
-            position: absolute;
-            top: 33px;
-            width: 13px;
-            height: 13px;
-            border-radius: 50%;
-            background: #4e73df;
-            animation-timing-function: cubic-bezier(0, 1, 1, 0);
-        }
-        
-        .dots-loader div:nth-child(1) {
-            left: 8px;
-            animation: dots1 0.6s infinite;
-        }
-        
-        .dots-loader div:nth-child(2) {
-            left: 8px;
-            animation: dots2 0.6s infinite;
-        }
-        
-        .dots-loader div:nth-child(3) {
-            left: 32px;
-            animation: dots2 0.6s infinite;
-        }
-        
-        .dots-loader div:nth-child(4) {
-            left: 56px;
-            animation: dots3 0.6s infinite;
-        }
-        
-        @keyframes dots1 {
-            0% { transform: scale(0); }
-            100% { transform: scale(1); }
-        }
-        
-        @keyframes dots3 {
-            0% { transform: scale(1); }
-            100% { transform: scale(0); }
-        }
-        
-        @keyframes dots2 {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(24px, 0); }
-        }
-
-        /* Modern Spinner */
-        .modern-spinner {
-            display: inline-block;
-            width: 50px;
-            height: 50px;
-            border: 3px solid rgba(78, 115, 223, 0.3);
-            border-radius: 50%;
-            border-top-color: #4e73df;
-            animation: spin 1s ease-in-out infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Card Loading Skeleton */
-        .skeleton-loader {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
-        }
-        
-        @keyframes loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        /* Table Row Loading */
-        .table-loading {
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .table-loading::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(78, 115, 223, 0.2), transparent);
-            animation: table-shimmer 1.5s infinite;
-        }
-        
-        @keyframes table-shimmer {
-            0% { left: -100%; }
-            100% { left: 100%; }
-        }
-
-        /* Button Loading State */
-        .btn-loading {
-            position: relative;
-            color: transparent !important;
-            pointer-events: none;
-        }
-        
-        .btn-loading::after {
-            content: '';
-            position: absolute;
-            width: 16px;
-            height: 16px;
-            top: 50%;
-            left: 50%;
-            margin-left: -8px;
-            margin-top: -8px;
-            border: 2px solid #ffffff;
-            border-radius: 50%;
-            border-top-color: transparent;
-            animation: spin 1s linear infinite;
-        }
-
-        /* Search Loading */
-        .search-loader {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 20px;
-            height: 20px;
-            border: 2px solid #dee2e6;
-            border-top: 2px solid #4e73df;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            display: none;
-        }
-
-        /* Chart Loading */
-        .chart-loading {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.9);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-        }
-
-        /* Success Animation */
-        .success-checkmark {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: block;
-            stroke-width: 3;
-            stroke: #28a745;
-            stroke-miterlimit: 10;
-            margin: 10px auto;
-            box-shadow: inset 0px 0px 0px #28a745;
-            animation: fill 0.4s ease-in-out 0.4s forwards, scale 0.3s ease-in-out 0.9s both;
-        }
-        
-        .success-checkmark__circle {
-            stroke-dasharray: 166;
-            stroke-dashoffset: 166;
-            stroke-width: 3;
-            stroke-miterlimit: 10;
-            stroke: #28a745;
-            fill: none;
-            animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
-        }
-        
-        .success-checkmark__check {
-            transform-origin: 50% 50%;
-            stroke-dasharray: 48;
-            stroke-dashoffset: 48;
-            animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
-        }
-        
-        @keyframes stroke {
-            100% { stroke-dashoffset: 0; }
-        }
-        
-        @keyframes scale {
-            0%, 100% { transform: none; }
-            50% { transform: scale3d(1.1, 1.1, 1); }
-        }
-        
-        @keyframes fill {
-            100% { box-shadow: inset 0px 0px 0px 30px #28a745; }
-        }
-
-        /* Loading Text Animation */
-        .loading-text {
-            font-size: 14px;
-            color: #6c757d;
-            margin-top: 15px;
-        }
-        
-        .loading-dots::after {
-            content: '';
-            animation: dots 1.5s steps(5, end) infinite;
-        }
-        
-        @keyframes dots {
-            0%, 20% { color: rgba(0,0,0,0); text-shadow: 0.25em 0 0 rgba(0,0,0,0), 0.5em 0 0 rgba(0,0,0,0); }
-            40% { color: #6c757d; text-shadow: 0.25em 0 0 rgba(0,0,0,0), 0.5em 0 0 rgba(0,0,0,0); }
-            60% { text-shadow: 0.25em 0 0 #6c757d, 0.5em 0 0 rgba(0,0,0,0); }
-            80%, 100% { text-shadow: 0.25em 0 0 #6c757d, 0.5em 0 0 #6c757d; }
-        }
+        /* Additional styles can be added here */
 
         /* Fade transition for smooth page loads */
         .page-transition {
@@ -412,15 +151,7 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body {% if user.is_authenticated %}data-session-timeout="{{ request.session.get_expiry_age|default:900 }}"{% endif %}>
-    <!-- Global Page Loader -->
-    <div id="pageLoader" class="page-loader">
-        <div class="text-center">
-            <div class="pulse-loader"></div>
-            <div class="loading-text">
-                <span class="loading-dots">Loading</span>
-            </div>
-        </div>
-    </div>
+    <!-- Page Content Wrapper -->
 
     <div id="wrapper" class="page-transition">
         <!-- Sidebar -->
@@ -436,6 +167,31 @@
                     <button class="btn btn-link text-primary fs-4 me-3 d-none d-lg-inline" id="sidebar-toggle" style="box-shadow:none;"><i class="bi bi-list"></i></button>
                     <h2 class="fs-2 m-0">{% block page_title %}{% endblock %}</h2>
                 </div>
+                
+                <!-- User Settings Dropdown -->
+                {% if user.is_authenticated %}
+                <div class="ms-auto d-flex align-items-center">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-primary dropdown-toggle d-flex align-items-center" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle me-2"></i>
+                            <span>{{ user.username }}</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="bi bi-person me-2"></i>Profile</a></li>
+                            <li><a class="dropdown-item" href="{% url 'settings' %}"><i class="bi bi-gear me-2"></i>Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="post" action="{% url 'logout' %}" id="logout-form">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item">
+                                        <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
             </nav>
             <div class="container-fluid">
                 {% if messages %}
@@ -462,179 +218,10 @@
     
     <script>
         // =====================================
-        // LOADER UTILITY FUNCTIONS
+        // UTILITY FUNCTIONS
         // =====================================
         
-        const LoaderUtils = {
-            // Show global page loader
-            showPageLoader: function(text = 'Loading') {
-                const loader = document.getElementById('pageLoader');
-                const loadingText = loader.querySelector('.loading-dots');
-                if (loadingText) {
-                    loadingText.textContent = text;
-                }
-                loader.classList.add('active');
-            },
-            
-            // Hide global page loader
-            hidePageLoader: function() {
-                const loader = document.getElementById('pageLoader');
-                loader.classList.remove('active');
-            },
-            
-            // Show button loading state
-            showButtonLoader: function(button, text = null) {
-                if (typeof button === 'string') {
-                    button = document.getElementById(button);
-                }
-                if (button) {
-                    button.dataset.originalText = button.innerHTML;
-                    button.classList.add('btn-loading');
-                    button.disabled = true;
-                    if (text) {
-                        button.innerHTML = text;
-                    }
-                }
-            },
-            
-            // Hide button loading state
-            hideButtonLoader: function(button) {
-                if (typeof button === 'string') {
-                    button = document.getElementById(button);
-                }
-                if (button && button.dataset.originalText) {
-                    button.classList.remove('btn-loading');
-                    button.disabled = false;
-                    button.innerHTML = button.dataset.originalText;
-                    delete button.dataset.originalText;
-                }
-            },
-            
-            // Show table loading state
-            showTableLoader: function(tableId) {
-                const table = document.getElementById(tableId);
-                if (table) {
-                    const tbody = table.querySelector('tbody');
-                    if (tbody) {
-                        tbody.innerHTML = `
-                            <tr class="table-loading">
-                                <td colspan="10" class="text-center py-4">
-                                    <div class="modern-spinner mx-auto"></div>
-                                    <div class="loading-text mt-2">Loading data...</div>
-                                </td>
-                            </tr>
-                        `;
-                    }
-                }
-            },
-            
-            // Show skeleton loading for cards
-            showSkeletonLoader: function(containerId, count = 3) {
-                const container = document.getElementById(containerId);
-                if (container) {
-                    let skeletonHTML = '';
-                    for (let i = 0; i < count; i++) {
-                        skeletonHTML += `
-                            <div class="col-md-4 mb-3">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <div class="skeleton-loader rounded mb-2" style="height: 20px; width: 80%;"></div>
-                                        <div class="skeleton-loader rounded mb-2" style="height: 15px; width: 60%;"></div>
-                                        <div class="skeleton-loader rounded" style="height: 15px; width: 40%;"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    }
-                    container.innerHTML = skeletonHTML;
-                }
-            },
-            
-            // Show chart loading
-            showChartLoader: function(chartContainerId) {
-                const container = document.getElementById(chartContainerId);
-                if (container) {
-                    const loader = document.createElement('div');
-                    loader.className = 'chart-loading';
-                    loader.innerHTML = `
-                        <div class="text-center">
-                            <div class="dots-loader">
-                                <div></div><div></div><div></div><div></div>
-                            </div>
-                            <div class="loading-text mt-2">Loading chart data...</div>
-                        </div>
-                    `;
-                    container.style.position = 'relative';
-                    container.appendChild(loader);
-                }
-            },
-            
-            // Hide chart loading
-            hideChartLoader: function(chartContainerId) {
-                const container = document.getElementById(chartContainerId);
-                if (container) {
-                    const loader = container.querySelector('.chart-loading');
-                    if (loader) {
-                        loader.remove();
-                    }
-                }
-            },
-            
-            // Show search loading
-            showSearchLoader: function(inputId) {
-                const input = document.getElementById(inputId);
-                if (input && input.parentElement) {
-                    input.parentElement.style.position = 'relative';
-                    let loader = input.parentElement.querySelector('.search-loader');
-                    if (!loader) {
-                        loader = document.createElement('div');
-                        loader.className = 'search-loader';
-                        input.parentElement.appendChild(loader);
-                    }
-                    loader.style.display = 'block';
-                }
-            },
-            
-            // Hide search loading
-            hideSearchLoader: function(inputId) {
-                const input = document.getElementById(inputId);
-                if (input && input.parentElement) {
-                    const loader = input.parentElement.querySelector('.search-loader');
-                    if (loader) {
-                        loader.style.display = 'none';
-                    }
-                }
-            },
-            
-            // Show success animation
-            showSuccess: function(containerId, message = 'Success!') {
-                const container = document.getElementById(containerId);
-                if (container) {
-                    container.innerHTML = `
-                        <div class="text-center">
-                            <svg class="success-checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-                                <circle class="success-checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
-                                <path class="success-checkmark__check" fill="none" d="m14.1 27.2l7.1 7.2 16.7-16.8"/>
-                            </svg>
-                            <div class="mt-2 text-success">${message}</div>
-                        </div>
-                    `;
-                }
-            },
-            
-            // Auto-refresh functionality
-            autoRefresh: function(callback, interval = 30000) {
-                return setInterval(() => {
-                    this.showPageLoader('Refreshing data...');
-                    callback().finally(() => {
-                        this.hidePageLoader();
-                    });
-                }, interval);
-            }
-        };
-
-        // Make LoaderUtils globally available
-        window.LoaderUtils = LoaderUtils;
+        // Any utility functions can be added here
         
         // =====================================
         // PAGE INITIALIZATION
@@ -648,32 +235,7 @@
                     wrapper.classList.add('loaded');
                 }, 100);
             }
-            
-            // Hide initial page loader
-            setTimeout(() => {
-                LoaderUtils.hidePageLoader();
-            }, 100);
         });
-        
-        // =====================================
-        // AJAX SETUP WITH LOADERS
-        // =====================================
-        
-        // Enhanced fetch with automatic loader
-        window.fetchWithLoader = function(url, options = {}, loaderText = 'Loading...') {
-            LoaderUtils.showPageLoader(loaderText);
-            
-            return fetch(url, {
-                ...options,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/json',
-                    ...options.headers
-                }
-            }).finally(() => {
-                LoaderUtils.hidePageLoader();
-            });
-        };
         
         // =====================================
         // SIDEBAR FUNCTIONALITY
@@ -703,59 +265,22 @@
         });
         
         // =====================================
-        // PAGE TRANSITION HANDLING
+        // PAGE TRANSITIONS
         // =====================================
         
-        // Intercept navigation clicks to show loading
-        document.addEventListener('click', function(e) {
-            const link = e.target.closest('a');
-            if (link && 
-                link.getAttribute('href') && 
-                !link.getAttribute('href').startsWith('#') &&
-                !link.getAttribute('href').startsWith('javascript:') &&
-                !link.hasAttribute('download') &&
-                !link.getAttribute('target') &&
-                link.hostname === window.location.hostname) {
-                
-                // Show page loader for internal navigation
-                LoaderUtils.showPageLoader('Loading page...');
-            }
-        });
-        
-        // Handle form submissions
-        document.addEventListener('submit', function(e) {
-            const form = e.target;
-            if (form && !form.hasAttribute('data-no-loader')) {
-                LoaderUtils.showPageLoader('Processing...');
-            }
-        });
+        // Add any page transition handling here
         
         // =====================================
-        // AUTO-REFRESH FOR DATABASE CHANGES
+        // FORM SUBMISSION
         // =====================================
         
-        // Auto-refresh dashboard data every 2 minutes
-        if (window.location.pathname === '/' || window.location.pathname.includes('dashboard')) {
-            const refreshInterval = LoaderUtils.autoRefresh(async () => {
-                try {
-                    const response = await fetch(window.location.href, {
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                    });
-                    
-                    if (response.ok) {
-                        // Optionally update specific sections without full page reload
-                        console.log('Dashboard data refreshed');
-                    }
-                } catch (error) {
-                    console.error('Auto-refresh failed:', error);
-                }
-            }, 120000); // 2 minutes
-            
-            // Clear interval when leaving page
-            window.addEventListener('beforeunload', () => {
-                clearInterval(refreshInterval);
-            });
-        }
+        // Add any form submission handling here
+        
+        // =====================================
+        // ADDITIONAL FUNCTIONALITY
+        // =====================================
+        
+        // Add any additional functionality here
         
         // =====================================
         // ENHANCED UX FEATURES

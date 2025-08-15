@@ -26,4 +26,8 @@ urlpatterns = [
     path('generate-report/', views.generate_report, name='generate_report'),
     path('reports/<int:report_id>/download/', views.download_report, name='download_report'), # Added download URL
     path('reports/<int:report_id>/delete/', views.delete_report, name='delete_report'),     # Added delete URL
+    
+    # User Profile and Settings URLs
+    path('profile/', views.profile, name='profile'),
+    path('settings/', views.settings, name='settings'),
 ]
