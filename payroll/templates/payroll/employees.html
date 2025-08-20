@@ -1,7 +1,9 @@
 {% extends 'base.html' %}
+{% load company_tags %}
+
 {% load static %}
 
-{% block title %}Employees Management - PayPulse{% endblock %}
+{% block title %}Employees Management - {% get_company_name %}{% endblock %}
 
 {% block page_title %}Employees Management{% endblock %}
 

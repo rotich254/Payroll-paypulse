@@ -34,4 +34,4 @@ media
 *.swo 
 
 # Render specific
-.render/ 
+.render/ db.sqlite3

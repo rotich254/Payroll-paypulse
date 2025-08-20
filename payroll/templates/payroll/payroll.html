@@ -1,8 +1,10 @@
 {% extends 'base.html' %}
+{% load company_tags %}
 {% load static %}
 {% load humanize %}
 
-{% block title %}Payroll Processing - PayPulse{% endblock %}
+{% block title %}Payroll Processing - {% get_company_name %}{% endblock %}
+
 
 {% block page_title %}Payroll Processing{% endblock %}
 

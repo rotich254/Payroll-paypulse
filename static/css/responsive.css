@@ -1,130 +1,222 @@
 /* Responsive CSS for PayPulse System */
 
 /* Base mobile-first styles */
+:root {
+    --sidebar-width: 250px;
+    --sidebar-collapsed-width: 4rem;
+    --transition-speed: 0.3s;
+    --bottom-nav-height: 60px;
+}
+
+html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+}
+
 .sidebar {
-    transition: all 0.3s ease;
+    transition: all var(--transition-speed) ease;
 }
 
 #page-content-wrapper {
-    transition: all 0.3s ease;
+    transition: all var(--transition-speed) ease;
     width: 100%;
 }
 
-/* Small devices (phones, less than 576px) */
-@media (max-width: 575.98px) {
-    /* Hide sidebar by default on small screens */
-    #sidebar-wrapper {
-        margin-left: -250px;
+/* Small and medium devices (phones and tablets, less than 992px) */
+@media (max-width: 991.98px) {
+        #sidebar-wrapper {
         position: fixed;
-        z-index: 1000;
+        top: 0;
+        left: -250px; /* Hidden by default */
+        width: 250px;
         height: 100%;
+        background-color: #f8f9fa;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        z-index: 1060;
+        transition: all var(--transition-speed) ease;
     }
-    
-    /* When toggled, show sidebar */
+
     #wrapper.toggled #sidebar-wrapper {
-        margin-left: 0;
+        left: 0;
+    }
+
+    #sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 1050;
+        display: none;
+    }
+
+    #wrapper.toggled #sidebar-overlay {
+        display: block;
     }
     
-    /* Adjust content area when sidebar is hidden */
+    /* Adjust content area for bottom nav */
     #page-content-wrapper {
-        padding-left: 0;
+        padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
+        min-height: calc(100vh - var(--bottom-nav-height));
     }
-    
+
+    /* Hide sidebar header and footer in mobile bottom nav */
+    #sidebar-wrapper .sidebar-header,
+    #sidebar-wrapper .sidebar-footer {
+        display: none;
+    }
+
+    /* Ensure sidebar links are displayed vertically in slide-out menu */
+    #sidebar-wrapper .list-group {
+        flex-direction: column;
+        width: 100%;
+        padding: 0;
+    }
+
+    #sidebar-wrapper .list-group-item {
+        padding: 0.75rem 1.25rem;
+        font-size: 1rem;
+        flex-shrink: unset;
+    }
+
+    #sidebar-wrapper .list-group-item i {
+        margin-bottom: 0;
+        margin-right: 0.5rem;
+    }
+
+    #sidebar-wrapper .sidebar-label {
+        white-space: nowrap;
+        text-align: left;
+        overflow: visible;
+        text-overflow: unset;
+        max-width: unset;
+    }
+
     /* Full width tables with horizontal scroll */
     .table-responsive {
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
     
     /* Adjust card layouts */
     .card {
         margin-bottom: 1rem;
+        width: 100%;
     }
     
     /* Make form elements full width */
-    .form-control, .form-select, .btn {
+    .form-control, .form-select, .btn:not(.btn-link):not(.sidebar-toggle):not(.dropdown-toggle) {
         width: 100%;
         margin-bottom: 0.5rem;
     }
     
     /* Stack form buttons */
-    .form-group .btn {
+    .form-group .btn:not(.btn-link) {
         display: block;
         width: 100%;
         margin-right: 0;
+        margin-bottom: 0.5rem;
     }
     
     /* Adjust modal dialogs */
     .modal-dialog {
         margin: 0.5rem;
+        max-width: calc(100% - 1rem);
     }
     
     /* Adjust navbar elements */
+    .navbar {
+        padding: 0.5rem 1rem;
+    }
+    
     .navbar .dropdown-menu {
         position: fixed;
         top: auto;
         right: 0;
         width: 100%;
         margin-top: 0;
+        box-shadow: 0 -5px 10px rgba(0,0,0,0.1);
     }
     
     /* Make dashboard cards full width */
-    .dashboard-card {
-        width: 100%;
+    .dashboard-card, 
+    .col-sm-6, 
+    .col-md-4, 
+    .col-lg-3 {
+        width: 100% !important;
         margin-bottom: 1rem;
     }
     
     /* Adjust chart containers */
     .chart-container {
         height: 300px !important;
+        width: 100% !important;
     }
-}
-
-/* Medium devices (tablets, 576px to 767px) */
-@media (min-width: 576px) and (max-width: 767.98px) {
-    /* Sidebar behavior on medium screens */
-    #sidebar-wrapper {
-        margin-left: -250px;
+    
+    /* Adjust headings for mobile */
+    h1 {
+        font-size: 1.75rem;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+    
+    /* Adjust spacing */
+    .container-fluid {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    /* Fix for select2 on mobile */
+    .select2-container {
+        width: 100% !important;
+    }
+    
+    /* Overlay for sidebar on mobile */
+    #sidebar-overlay {
+        display: none;
         position: fixed;
-        z-index: 1000;
-        height: 100%;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
     }
     
-    #wrapper.toggled #sidebar-wrapper {
-        margin-left: 0;
-    }
-    
-    /* Adjust content area */
-    #page-content-wrapper {
-        padding-left: 0;
-    }
-    
-    /* Two column card layout */
-    .dashboard-stats .col-md-3 {
-        width: 50%;
-    }
-    
-    /* Adjust chart containers */
-    .chart-container {
-        height: 350px !important;
+    #wrapper.toggled #sidebar-overlay {
+        display: block;
     }
 }
 
-/* Large devices (desktops, 768px and up) */
-@media (min-width: 768px) {
+
+
+/* Large devices (desktops, 992px and up) */
+@media (min-width: 992px) {
     /* Sidebar is visible by default */
     #sidebar-wrapper {
         margin-left: 0;
+        width: var(--sidebar-width);
+        transition: width var(--transition-speed) ease, margin var(--transition-speed) ease;
     }
     
     /* When toggled, hide sidebar */
     #wrapper.toggled #sidebar-wrapper {
-        margin-left: -250px;
+        margin-left: calc(-1 * var(--sidebar-width));
+    }
+    
+    /* Collapsed sidebar option */
+    #sidebar-wrapper.collapsed {
+        width: var(--sidebar-collapsed-width);
     }
     
     /* Adjust content area when sidebar is visible */
     #page-content-wrapper {
         min-width: 0;
         width: 100%;
+        transition: margin var(--transition-speed) ease;
     }
     
     /* Adjust content area when sidebar is hidden */
@@ -136,6 +228,31 @@
     .form-group .btn {
         display: inline-block;
         width: auto;
+        margin-bottom: 0;
+    }
+    
+    /* Improve grid layout */
+    .row {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    
+    /* Responsive tables */
+    .table-responsive {
+        overflow-x: visible;
+    }
+    
+    /* Adjust navbar for desktop */
+    .navbar {
+        padding: 0.5rem 1.5rem;
+    }
+    
+    /* Improve dropdown positioning */
+    .dropdown-menu {
+        position: absolute;
+        right: 0;
+        left: auto;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     }
 }
 
@@ -143,13 +260,36 @@
 @media (min-width: 1200px) {
     /* Further refinements for very large screens */
     .container-fluid {
-        padding-left: 2rem;
-        padding-right: 2rem;
+        padding-left: 2.5rem;
+        padding-right: 2.5rem;
+        max-width: 1600px;
+        margin: 0 auto;
     }
     
     /* Larger charts on big screens */
     .chart-container {
         height: 450px !important;
+    }
+    
+    /* Improve card layouts on large screens */
+    .card {
+        margin-bottom: 1.5rem;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Improve table readability on large screens */
+    .table th {
+        font-size: 1rem;
+    }
+    
+    .table td {
+        font-size: 0.95rem;
+        padding: 0.75rem;
     }
 }
 
@@ -203,8 +343,10 @@
     display: block;
     width: 100%;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
+/* Enhanced responsive tables for mobile */
 @media (max-width: 767.98px) {
     /* Convert tables to cards on mobile */
     .table-responsive-card table,
@@ -226,13 +368,21 @@
         margin-bottom: 1rem;
         border: 1px solid #e3e6f0;
         border-radius: 0.35rem;
+        background-color: #fff;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
     }
     
     .table-responsive-card td {
         position: relative;
         padding-left: 50% !important;
+        padding-top: 0.75rem !important;
+        padding-bottom: 0.75rem !important;
         text-align: right;
         border-bottom: 1px solid #e3e6f0;
+        min-height: 3rem;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
     }
     
     .table-responsive-card td:last-child {
@@ -248,6 +398,34 @@
         text-align: left;
         font-weight: bold;
         content: attr(data-label);
+        color: var(--dark-color);
+        display: flex;
+        align-items: center;
+        height: 100%;
+        top: 0;
+    }
+    
+    /* Style for action buttons in tables */
+    .table-responsive-card td .btn-group {
+        display: flex;
+        justify-content: flex-end;
+        width: 100%;
+    }
+    
+    .table-responsive-card td .btn {
+        margin: 0.125rem;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Zebra striping for card rows */
+    .table-responsive-card tr:nth-of-type(odd) {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+    
+    /* Highlight for hovering over rows */
+    .table-responsive-card tr:hover {
+        background-color: rgba(78, 115, 223, 0.05);
     }
 }
 
@@ -296,4 +474,4 @@
     height: 100%;
     width: 3px;
     background-color: #fff;
-} 
+}

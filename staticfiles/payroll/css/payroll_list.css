@@ -1,0 +1,171 @@
+/* Payroll List Styling - Matches application design patterns */
+:root {
+  --primary-color: #4e73df;
+  --secondary-color: #1cc88a;
+  --danger-color: #e74a3b;
+  --warning-color: #f6c23e;
+  --info-color: #36b9cc;
+  --dark-color: #5a5c69;
+  --light-color: #f8f9fc;
+  --border-color: #e3e6f0;
+}
+
+/* Card styling */
+.card {
+  border: none;
+  border-radius: 0.75rem;
+  box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+}
+
+.card:hover {
+  box-shadow: 0 0.5rem 2rem 0 rgba(58, 59, 69, 0.2);
+}
+
+.card .card-header {
+  background: linear-gradient(90deg, var(--primary-color) 0%, #224abe 100%);
+  color: #fff;
+  border-bottom: none;
+  padding: 1rem 1.5rem;
+  font-weight: 600;
+}
+
+.card .card-body {
+  padding: 1.5rem;
+  background-color: #fff;
+}
+
+/* Table styling */
+.table {
+  margin-bottom: 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.table th {
+  background-color: var(--light-color);
+  color: var(--dark-color);
+  font-weight: 600;
+  border-bottom: 2px solid var(--border-color);
+  padding: 0.75rem 1rem;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 0.75rem 1rem;
+  vertical-align: middle;
+}
+
+.table tbody tr:nth-child(even) {
+  background-color: rgba(78, 115, 223, 0.05);
+}
+
+.table tbody tr:hover {
+  background-color: rgba(78, 115, 223, 0.1);
+  transition: background-color 0.2s ease;
+}
+
+/* Button styling */
+.btn-group .btn {
+  margin-right: 0.25rem;
+  border-radius: 0.25rem !important;
+  transition: all 0.2s ease;
+}
+
+.btn-group .btn:last-child {
+  margin-right: 0;
+}
+
+.btn-outline-primary {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--primary-color);
+  color: #fff;
+}
+
+.btn-outline-success {
+  color: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+.btn-outline-success:hover {
+  background-color: var(--secondary-color);
+  color: #fff;
+}
+
+/* Badge styling */
+.badge {
+  padding: 0.5em 0.8em;
+  font-weight: 500;
+  font-size: 0.75em;
+  border-radius: 0.25rem;
+}
+
+.badge.bg-warning {
+  background-color: var(--warning-color) !important;
+  color: #fff !important;
+}
+
+.badge.bg-success {
+  background-color: var(--secondary-color) !important;
+}
+
+.badge.bg-info {
+  background-color: var(--info-color) !important;
+}
+
+/* Empty state styling */
+.empty-state {
+  padding: 3rem 0;
+  color: var(--dark-color);
+  text-align: center;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.empty-state i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: var(--border-color);
+}
+
+/* Pagination styling */
+.pagination {
+  margin-top: 1.5rem;
+  margin-bottom: 0;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.pagination .page-link {
+  color: var(--primary-color);
+  border-color: var(--border-color);
+  margin: 0 0.15rem;
+  border-radius: 0.25rem;
+}
+
+.pagination .page-link:hover {
+  background-color: rgba(78, 115, 223, 0.1);
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}

@@ -1,8 +1,11 @@
+
 {% extends 'base.html' %}
+{% load company_tags %}
 {% load static %}
 {% load humanize %}
 
-{% block title %}Dashboard - PayPulse{% endblock %}
+{% block title %}Dashboard - {% get_company_name %}{% endblock %}
+
 
 {% block page_title %}Dashboard{% endblock %}
 
